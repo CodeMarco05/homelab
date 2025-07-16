@@ -1,0 +1,29 @@
+version: "3.8"
+
+services:
+  portainer:
+    image: portainer/portainer-ce
+    container_name: portainer
+    command: -H unix:///var/run/docker.sock
+    restart: always
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data
+    networks:
+      - web
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.portainer.rule=Host(`portainer.marco-brandt.com`)"
+      - "traefik.http.routers.portainer.entrypoints=websecure"
+      - "traefik.http.routers.portainer.tls.certresolver=myresolver"
+      # Optional: Basic Auth middleware
+      # - "traefik.http.routers.portainer.middlewares=auth@docker"
+      # - "traefik.http.middlewares.auth.basicauth.users=user:$$apr1$$abc123... (optional)"
+      - "traefik.http.services.portainer.loadbalancer.server.port=9000"
+
+volumes:
+  portainer_data:
+
+networks:
+  web:
+    external: true

@@ -6,8 +6,12 @@ all:
 
 clean:
 	latexmk -c
+	find . -name '*.aux' -delete
+	rm -f $(MAIN).bbl
 
 cleanall:
 	latexmk -C
+	find . -name '*.aux' -delete
+	rm -f $(MAIN).bbl
 
 .PHONY: all clean cleanall

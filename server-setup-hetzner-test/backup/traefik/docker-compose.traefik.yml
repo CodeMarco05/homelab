@@ -1,0 +1,23 @@
+services:
+  traefik:
+    image: traefik:v2.11
+    container_name: traefik
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080" # optional dashboard
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik.yml:/traefik.yml:ro
+      - ./letsencrypt:/letsencrypt
+      - ./dynamic.yml:/dynamic.yml:ro
+    command:
+      - "--configFile=/traefik.yml"
+    networks:
+      - web
+
+networks:
+  web:
+    external: true
+    name: web

@@ -1,0 +1,17 @@
+http:
+  routers:
+    traefik-dashboard:
+      rule: "Host(`traefik.marco-brandt.com`)"
+      service: api@internal
+      entryPoints:
+        - websecure
+      tls:
+        certResolver: myresolver
+      middlewares:
+        - default-auth
+
+  middlewares:
+    default-auth:
+      basicAuth:
+        users:
+          - "admin:$apr1$QFZD7vO8$9Tzm9n560cq.YFGtrcjx3."

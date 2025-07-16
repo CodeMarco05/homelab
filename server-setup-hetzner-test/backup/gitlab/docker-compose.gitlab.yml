@@ -1,0 +1,32 @@
+services:
+  gitlab:
+    image: gitlab/gitlab-ee:latest
+    container_name: gitlab
+    restart: always
+    hostname: gitlab.marco-brandt.com   # Change to your actual domain
+    environment:
+      GITLAB_OMNIBUS_CONFIG: |
+        external_url 'https://gitlab.marco-brandt.com'  # Match your domain
+    ports:
+      - "2222:22"  # SSH access to GitLab (optional)
+    volumes:
+      - gitlab-config:/etc/gitlab
+      - gitlab-logs:/var/log/gitlab
+      - gitlab-data:/var/opt/gitlab
+    labels:
+      - "traefik.enable=true"
+      
+      - "traefik.http.routers.gitlab.rule=Host(`gitlab.marco-brandt.com`)"
+      - "traefik.http.routers.gitlab.entrypoints=websecure"
+      - "traefik.http.routers.gitlab.tls.certresolver=myresolver"
+      - "traefik.http.routers.gitlab.tls=true"
+      - "traefik.http.services.gitlab.loadbalancer.server.port=80"
+
+volumes:
+  gitlab-config:
+  gitlab-logs:
+  gitlab-data:
+  
+networks:
+  web:
+    external: true

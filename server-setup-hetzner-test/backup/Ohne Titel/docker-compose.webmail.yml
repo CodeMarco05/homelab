@@ -1,0 +1,25 @@
+version: "3.8"
+
+services:
+  roundcube:
+    image: roundcube/roundcubemail:latest
+    container_name: roundcube
+    restart: unless-stopped
+    environment:
+      - ROUNDCUBEMAIL_DEFAULT_HOST=ssl://mail.marco-brandt.com
+      - ROUNDCUBEMAIL_SMTP_SERVER=tls://mail.marco-brandt.com
+      - ROUNDCUBEMAIL_SMTP_PORT=587
+      - ROUNDCUBEMAIL_SMTP_USER=%u
+      - ROUNDCUBEMAIL_SMTP_PASS=%p
+    networks:
+      - web
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.roundcube.rule=Host(`webmail.marco-brandt.com`)"
+      - "traefik.http.routers.roundcube.entrypoints=websecure"
+      - "traefik.http.routers.roundcube.tls.certresolver=myresolver"
+      - "traefik.http.services.roundcube.loadbalancer.server.port=80"
+
+networks:
+  web:
+    external: true
