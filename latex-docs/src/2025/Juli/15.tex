@@ -1,0 +1,70 @@
+\section{15. Juli 2025}
+
+Der Server ist nun fertig aufgebaut und läuft. Die Hardware ist in der Anlage zu finden. Momentan ist es so, dass die zwei SSDs in einem Mirror laufen in einem zfs pool. Diesen kann man wie folgt anlegen:
+
+Zuerst habe ich die beiden SSDs formatiert.
+
+\begin{verbatim}
+# anzeigen der SSDs
+lsblk -o NAME,SIZE,MODEL,TYPE,MOUNTPOINT
+
+# oder
+fdisk -l 
+
+# formatieren der Dateisystemsignatur
+wipefs -a /dev/sdX
+
+# formatieren des partitionstables
+sgdisk --zap-all /dev/sdX
+\end{verbatim}
+
+Dann habe ich einen zfs Pool in der gui von Proxmox erstellt. Wichtig ist es, dass der Pool dem System noch nicht hinzugefügt wird. Sonst können nur die Standart systeme darauf gespeichert werden.
+Wichtig ist, dass die Compression auf "tz4" gestellt wird. \href{https://www.youtube.com/watch?v=YxpCVAC_H1o&list=PLrPLSEpIttKKEDIQwwgn0k2kD30ykt-va&index=2}{\bf{Video}}
+
+Um dann die verschiedenen Ordner zu erstellen, in die Konsole der Node gehen.
+
+\begin{verbatim}
+    # zfspool anzeigen
+    zpool list
+
+    # gibt den mountpoint an
+    zfs list
+
+    # die einzelnen folder erstellen
+    zfs create <mountpoint>/<ordner>
+    
+    # beispiel
+    zfs create tank/backups
+
+    # meine erstellten folders
+    zfs create tank/backups
+    zfs create tank/isos
+    zfs create tank/vm-drives
+\end{verbatim}
+
+Zpool wird verwendet um and den storage pools zu arbeiten und diese zu verwalten. zfs wird verwendet um dann ZFS Dateisysteme und Volumes zu verwalten, welche auf einem Pool angelegt werden.
+
+Die Ordner liegen dann auf der platt von /tank oder wo es angegeben wurde mit dem Mountnamen.
+
+\newpage
+
+Um dann die Ordner als Storage hinzuzufügen, muss man bei unter \it{Datacenter} bei \it{Storage} bei \it{add} ein Directory hinzufügen. Hier sind die Angaben
+
+\begin{itemize}
+    \item ID: beliebiger Name (z.B. backups, isos, vm-drives)
+    \item Directory: /tank/backups, /tank/isos, /tank/vm-drives (je nach Ordner)
+    \item Content: auswählen, z.B. VZDump backup file, ISO image, Disk image
+    \item Nodes: auf welchen Nodes verfügbar
+    \item Enable: Haken setzen
+\end{itemize}
+
+
+Für die unterschiedlichen oben von mir gegebenen Beispiele empfehle ich
+
+\begin{itemize}
+    \item \textbf{backups}: VZDump backup file, Snippets
+    \item \textbf{isos}: ISO image und Container template
+    \item \textbf{vm-drives}: Disk image und Container
+\end{itemize}
+
+Die Ordner teilen sich jetzt den Speicherplatz auf den SSDs.

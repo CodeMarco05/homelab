@@ -1,0 +1,68 @@
+# LaTeX intermediate and output files
+*.aux
+*.bbl
+*.blg
+*.brf
+*.fls
+*.fdb_latexmk
+*.log
+*.out
+*.toc
+*.lof
+*.lot
+*.synctex.gz
+*.nav
+*.snm
+*.vrb
+*.xdv
+*.run.xml
+*.bcf
+*.acn
+*.acr
+*.alg
+*.glg
+*.glo
+*.gls
+*.ist
+*.xdy
+*.dvi
+*.ps
+*.pdf
+
+# latexmk specific
+*.fls
+*.fdb_latexmk
+
+# MacOS Finder files
+.DS_Store
+
+# VSCode settings
+.vscode/
+
+# Output directories (optional, if you generate output elsewhere)
+output/
+
+# Ignore generated images (optional, if images are generated)
+# images/*.pdf
+# images/*.png
+# images/*.jpg
+
+# Ignore build artifacts in subfolders
+src/**/*.aux
+src/**/*.log
+src/**/*.out
+src/**/*.toc
+src/**/*.bbl
+src/**/*.blg
+src/**/*.fdb_latexmk
+src/**/*.fls
+src/**/*.synctex.gz
+appendices/**/*.aux
+appendices/**/*.log
+appendices/**/*.out
+appendices/**/*.toc
+appendices/**/*.bbl
+appendices/**/*.blg
+appendices/**/*.fdb_latexmk
+appendices/**/*.fls
+appendices/**/*.synctex.gz 

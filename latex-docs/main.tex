@@ -1,0 +1,32 @@
+\documentclass[12pt,a4paper]{article}
+
+\input{preamble.tex}
+
+\usepackage[backend=biber,style=alphabetic]{biblatex}
+\addbibresource{bibliography.bib}
+
+
+\title{Homelab Documentation}
+\author{Marco Brandt}
+\date{16. Juli 2025}
+
+
+\begin{document}
+
+\title{\includegraphics[width=8cm]{images/title-page.png}\\Homelab Documentation}
+\author{Marco Brandt}
+\date{16. Juli 2025}
+
+\maketitle
+\newpage
+
+\tableofcontents
+
+\include{src/2025/Juli/15}
+
+\printbibliography
+
+\appendix
+\include{appendices/specs-2025-07-16}
+
+\end{document}
