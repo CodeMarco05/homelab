@@ -7,6 +7,11 @@
 \usepackage[english]{babel}
 \usepackage{csquotes}
 
+% Modern fonts (Apple-like)
+\usepackage{sourcesanspro}
+\renewcommand{\familydefault}{\sfdefault}
+\usepackage{microtype}
+
 % Math and symbols
 \usepackage{amsmath, amssymb, amsfonts}
 
@@ -25,6 +30,32 @@
 \usepackage{enumitem}
 \usepackage{booktabs}
 \usepackage{caption}
+
+% Code listings
+\usepackage{listings}
+\usepackage{xcolor}
+
+% Configure listings for better readability without colors
+\lstset{
+    basicstyle=\fontfamily{lmtt}\selectfont\small,
+    backgroundcolor=\color{gray!5},
+    frame=lines,
+    framerule=0.5pt,
+    rulecolor=\color{gray!50},
+    numbers=none,
+    breaklines=true,
+    breakatwhitespace=true,
+    tabsize=4,
+    showspaces=false,
+    showstringspaces=false,
+    captionpos=b,
+    aboveskip=1.5\baselineskip,
+    belowskip=1\baselineskip,
+    xleftmargin=0.5cm,
+    xrightmargin=0.5cm,
+    lineskip=0.2ex,
+    language=bash
+}
 
 % Custom commands (add as needed)
 
