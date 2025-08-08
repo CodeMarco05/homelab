@@ -94,3 +94,154 @@ sudo chown $USER:$USER ~/.kube/config
 Die Cluster-Verwaltung kann nun über die \texttt{k9s} Terminal-UI erfolgen.
 
 Der K3s Cluster ist erfolgreich implementiert und betriebsbereit für nachfolgende Workload-Deployments.
+
+\subsubsection{Erweiterte VPN-Konfiguration für K3s}
+
+Für komplexere Netzwerk-Setups mit VPN-Lösungen ist eine explizite Kontrolle über die verwendeten IP-Adressen und Netzwerkschnittstellen erforderlich. Dieses Template ermöglicht die präzise Konfiguration von K3s mit VPN-IPs, öffentlichen IPs und spezifischen Netzwerk-Interfaces.
+
+\paragraph{K3s Server Installation mit VPN-Parametern}
+
+Die Server-Installation erfolgt mit erweiterten Netzwerk-Parametern:
+
+\begin{verbatim}
+curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="\
+  --node-ip=<server_vpn_ip> \
+  --advertise-address=<server_vpn_ip> \
+  --node-external-ip=<server_public_ip> \
+  --flannel-iface=<vpn_interface_name> \
+  --tls-san=<server_vpn_ip> \
+  --tls-san=<server_public_ip> \
+  --tls-san=<server_dns_name>" \
+  sh -
+\end{verbatim}
+
+\textbf{Parameter-Beschreibung:}
+\begin{itemize}
+  \item \texttt{<server\_vpn\_ip>} -- VPN/Private IP des Servers für Cluster-internen Traffic
+  \item \texttt{<server\_public\_ip>} -- Öffentliche IP des Servers (optional)
+  \item \texttt{<vpn\_interface\_name>} -- Name der VPN-Netzwerkschnittstelle (z.B. \texttt{wg0}, \texttt{tun0})
+  \item \texttt{<server\_dns\_name>} -- DNS-Hostname für API-Server-Zugriff (optional)
+\end{itemize}
+
+\paragraph{Join-Token extrahieren}
+
+Das Server-Token wird für die Worker-Node-Integration benötigt:
+
+\begin{verbatim}
+sudo cat /var/lib/rancher/k3s/server/node-token
+\end{verbatim}
+
+\paragraph{K3s Worker Installation mit VPN-Konfiguration}
+
+Die Worker-Nodes werden mit entsprechender VPN-Konfiguration hinzugefügt:
+
+\begin{verbatim}
+export K3S_URL="https://<server_vpn_ip>:6443"
+export K3S_TOKEN="<server_join_token>"
+
+curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="\
+  --node-ip=<worker_vpn_ip> \
+  --node-external-ip=<worker_public_ip> \
+  --flannel-iface=<vpn_interface_name>" \
+  sh -
+\end{verbatim}
+
+\textbf{Parameter-Beschreibung:}
+\begin{itemize}
+  \item \texttt{<server\_join\_token>} -- Token vom Server-Node
+  \item \texttt{<worker\_vpn\_ip>} -- VPN/Private IP des Worker-Nodes
+  \item \texttt{<worker\_public\_ip>} -- Öffentliche IP des Workers (optional)
+\end{itemize}
+
+\paragraph{Cluster-Verifikation}
+
+Die erfolgreiche Konfiguration wird durch Node-Überprüfung validiert:
+
+\begin{verbatim}
+kubectl get nodes -o wide
+\end{verbatim}
+
+Erwartete Spalten-Zuordnung:
+\begin{itemize}
+  \item \textbf{INTERNAL-IP} -- VPN-IP-Adressen
+  \item \textbf{EXTERNAL-IP} -- Öffentliche IP-Adressen (falls konfiguriert)
+\end{itemize}
+
+Diese Konfiguration ermöglicht eine sichere und flexible Cluster-Kommunikation über VPN-Verbindungen bei gleichzeitiger Kontrolle über externe Erreichbarkeit.
+
+\subsubsection{Netzwerk-Architektur mit Tailscale und Nginx Proxy Manager}
+
+Die Homelab-Infrastruktur basiert auf einer mehrstufigen Netzwerk-Architektur, die sichere VPN-Verbindungen mit flexiblem Reverse-Proxy-Management kombiniert.
+
+\paragraph{Tailscale VPN-Integration}
+
+Jeder Server im Cluster benötigt eine Tailscale-Installation als primäre VPN-Lösung:
+
+\begin{verbatim}
+curl -fsSL https://tailscale.com/install.sh | sh
+sudo tailscale up
+\end{verbatim}
+
+Tailscale ermöglicht:
+\begin{itemize}
+  \item Sichere Mesh-Netzwerk-Verbindungen zwischen allen Nodes
+  \item Automatische Peer-Discovery ohne manuelle Routing-Konfiguration  
+  \item Zero-Trust-Netzwerk-Architektur mit End-to-End-Verschlüsselung
+  \item Zentrale Zugriffskontrolle über das Tailscale Admin Panel
+\end{itemize}
+
+\paragraph{Nginx Proxy Manager für SSL-Terminierung}
+
+Nginx Proxy Manager (NPM) fungiert als zentraler Reverse Proxy und SSL-Termination-Point für alle Homelab-Services.
+
+\textbf{Deployment via Docker Compose:}
+
+\begin{verbatim}
+services:
+  nginx-proxy-manager:
+    image: 'jc21/nginx-proxy-manager:latest'
+    restart: unless-stopped
+    ports:
+      - '80:80'
+      - '443:443'
+      - '81:81'
+    volumes:
+      - ./data:/data
+      - ./letsencrypt:/etc/letsencrypt
+\end{verbatim}
+
+\paragraph{SSL-Zertifikat-Management mit DNS Challenge}
+
+Für private IP-Adressen und interne Services wird DNS Challenge über Cloudflare verwendet:
+
+\textbf{Cloudflare DNS Challenge Konfiguration:}
+\begin{itemize}
+  \item Verwendung von Cloudflare API-Token für automatische DNS-Validierung
+  \item Unterstützung für Wildcard-Zertifikate (\texttt{*.domain.com})
+  \item Automatische Zertifikat-Erneuerung ohne Port-Exposition
+  \item SSL-Zertifikate auch für private Tailscale-IPs
+\end{itemize}
+
+\paragraph{Proxy-Routing zu Kubernetes Services}
+
+NPM ermöglicht die Weiterleitung zu K3s Services über private Tailscale-Adressen:
+
+\textbf{Beispiel-Routing-Konfiguration:}
+\begin{itemize}
+  \item \textbf{Domain:} \texttt{app.homelab.com}
+  \item \textbf{Ziel:} \texttt{100.93.96.107:30080} (Tailscale IP + NodePort)
+  \item \textbf{SSL:} DNS Challenge via Cloudflare
+  \item \textbf{Zusätzliche Optionen:} WebSocket-Unterstützung, Custom Headers
+\end{itemize}
+
+\paragraph{Service-Discovery und Load Balancing}
+
+Die Architektur ermöglicht:
+\begin{itemize}
+  \item Routing zu verschiedenen K3s Services über eindeutige Subdomains
+  \item Load Balancing zwischen mehreren Worker Nodes
+  \item Health Checks und automatisches Failover
+  \item Zentrale SSL-Zertifikat-Verwaltung für alle Services
+\end{itemize}
+
+Diese Konfiguration bietet eine professionelle, skalierbare Lösung für sicheren externen Zugriff auf interne Homelab-Services ohne Kompromisse bei der Netzwerk-Sicherheit.
