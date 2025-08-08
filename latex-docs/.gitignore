@@ -33,19 +33,69 @@
 *.fls
 *.fdb_latexmk
 
+# Biber/BibTeX
+*.bbl
+*.bcf
+*.blg
+*.run.xml
+
+# Database files (like from uptime-kuma)
+*.db
+*.db-shm
+*.db-wal
+
+# Log files
+*.log
+error.log
+
+# SSL/TLS certificates and keys
+*.pem
+*.key
+*.crt
+acme.json
+
+# Docker volumes and data
+**/data/
+**/volumes/
+
 # MacOS Finder files
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
 
 # VSCode settings
 .vscode/
 
-# Output directories (optional, if you generate output elsewhere)
+# Temporary files
+*~
+*.tmp
+*.temp
+*.swp
+*.swo
+
+# Backup files
+*.bak
+backup/
+
+# Output directories
 output/
+build/
 
 # Ignore generated images (optional, if images are generated)
 # images/*.pdf
 # images/*.png
 # images/*.jpg
+
+# Screenshots and uploads (from uptime-kuma)
+screenshots/
+upload/
+
+# Docker TLS files
+docker-tls/
 
 # Ignore build artifacts in subfolders
 src/**/*.aux
@@ -57,6 +107,8 @@ src/**/*.blg
 src/**/*.fdb_latexmk
 src/**/*.fls
 src/**/*.synctex.gz
+src/**/*.run.xml
+src/**/*.bcf
 appendices/**/*.aux
 appendices/**/*.log
 appendices/**/*.out
@@ -65,4 +117,6 @@ appendices/**/*.bbl
 appendices/**/*.blg
 appendices/**/*.fdb_latexmk
 appendices/**/*.fls
-appendices/**/*.synctex.gz 
+appendices/**/*.synctex.gz
+appendices/**/*.run.xml
+appendices/**/*.bcf
