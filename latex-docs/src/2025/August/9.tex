@@ -1,0 +1,97 @@
+\subsection{9. August 2025 - Nginx Ingress Controller Setup}
+
+Dieser Abschnitt dokumentiert die Installation und Konfiguration des Nginx Ingress Controllers für K3s mittels Helm. Der Ingress Controller ermöglicht HTTP/HTTPS-Routing zu verschiedenen Services innerhalb des Kubernetes-Clusters.
+
+\subsubsection{Helm Installation des Nginx Ingress Controllers}
+
+Die Installation erfolgt über das offizielle Helm Chart gemäß der Kubernetes Ingress-Nginx Dokumentation:
+
+\textbf{Repository hinzufügen und Installation:}
+
+\begin{verbatim}
+helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+helm repo update
+helm install ingress-nginx ingress-nginx/ingress-nginx \
+  --namespace ingress-nginx --create-namespace
+\end{verbatim}
+
+Referenz: \texttt{https://kubernetes.github.io/ingress-nginx/deploy/}
+
+\subsubsection{Deployment-Status und Verifikation}
+
+Nach erfolgreicher Installation wird folgende Bestätigung ausgegeben:
+
+\begin{verbatim}
+Release "ingress-nginx" does not exist. Installing it now.
+NAME: ingress-nginx
+LAST DEPLOYED: Sat Aug  9 15:45:49 2025
+NAMESPACE: ingress-nginx
+STATUS: deployed
+REVISION: 1
+TEST SUITE: None
+NOTES:
+The ingress-nginx controller has been installed.
+It may take a few minutes for the load balancer IP to be available.
+You can watch the status by running 'kubectl get service 
+--namespace ingress-nginx ingress-nginx-controller 
+--output wide --watch'
+\end{verbatim}
+
+\subsubsection{Ingress-Ressourcen Konfiguration}
+
+\paragraph{Standard Ingress-Beispiel}
+
+Die folgende YAML-Konfiguration demonstriert eine grundlegende Ingress-Ressource:
+
+\begin{verbatim}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: example
+  namespace: foo
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: www.example.com
+      http:
+        paths:
+          - pathType: Prefix
+            backend:
+              service:
+                name: exampleService
+                port:
+                  number: 80
+            path: /
+  # TLS-Konfiguration (optional)
+  tls:
+    - hosts:
+      - www.example.com
+      secretName: example-tls
+\end{verbatim}
+
+\paragraph{TLS-Secret Konfiguration}
+
+Für HTTPS-Unterstützung muss ein entsprechendes Secret mit Zertifikat und privatem Schlüssel erstellt werden:
+
+\begin{verbatim}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: example-tls
+  namespace: foo
+data:
+  tls.crt: <base64 encoded cert>
+  tls.key: <base64 encoded key>
+type: kubernetes.io/tls
+\end{verbatim}
+
+\subsubsection{Service-Status Überwachung}
+
+Der LoadBalancer-Status kann kontinuierlich überwacht werden:
+
+\begin{verbatim}
+kubectl get service --namespace ingress-nginx \
+  ingress-nginx-controller --output wide --watch
+\end{verbatim}
+
+Der Nginx Ingress Controller ist nun einsatzbereit und ermöglicht flexibles HTTP/HTTPS-Routing zu verschiedenen Cluster-Services mit automatischer SSL-Terminierung.
