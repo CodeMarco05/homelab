@@ -1,0 +1,76 @@
+\subsection{Netzwerk-Architektur mit Tailscale und Nginx Proxy Manager}
+
+Die Homelab-Infrastruktur basiert auf einer mehrstufigen Netzwerk-Architektur, die sichere VPN-Verbindungen mit flexiblem Reverse-Proxy-Management kombiniert.
+
+\subsubsection{Tailscale VPN-Integration}
+
+Jeder Server im Cluster benötigt eine Tailscale-Installation als primäre VPN-Lösung:
+
+\begin{verbatim}
+curl -fsSL https://tailscale.com/install.sh | sh
+sudo tailscale up
+\end{verbatim}
+
+Tailscale ermöglicht:
+\begin{itemize}
+  \item Sichere Mesh-Netzwerk-Verbindungen zwischen allen Nodes
+  \item Automatische Peer-Discovery ohne manuelle Routing-Konfiguration  
+  \item Zero-Trust-Netzwerk-Architektur mit End-to-End-Verschlüsselung
+  \item Zentrale Zugriffskontrolle über das Tailscale Admin Panel
+\end{itemize}
+
+\subsubsection{Nginx Proxy Manager für SSL-Terminierung}
+
+Nginx Proxy Manager (NPM) fungiert als zentraler Reverse Proxy und SSL-Termination-Point für alle Homelab-Services.
+
+\paragraph{Deployment via Docker Compose}
+
+\begin{verbatim}
+services:
+  nginx-proxy-manager:
+    image: 'jc21/nginx-proxy-manager:latest'
+    restart: unless-stopped
+    ports:
+      - '80:80'
+      - '443:443'
+      - '81:81'
+    volumes:
+      - ./data:/data
+      - ./letsencrypt:/etc/letsencrypt
+\end{verbatim}
+
+\paragraph{SSL-Zertifikat-Management mit DNS Challenge}
+
+Für private IP-Adressen und interne Services wird DNS Challenge über Cloudflare verwendet:
+
+\textbf{Cloudflare DNS Challenge Konfiguration:}
+\begin{itemize}
+  \item Verwendung von Cloudflare API-Token für automatische DNS-Validierung
+  \item Unterstützung für Wildcard-Zertifikate (\texttt{*.domain.com})
+  \item Automatische Zertifikat-Erneuerung ohne Port-Exposition
+  \item SSL-Zertifikate auch für private Tailscale-IPs
+\end{itemize}
+
+\paragraph{Proxy-Routing zu Kubernetes Services}
+
+NPM ermöglicht die Weiterleitung zu K3s Services über private Tailscale-Adressen:
+
+\textbf{Beispiel-Routing-Konfiguration:}
+\begin{itemize}
+  \item \textbf{Domain:} \texttt{app.homelab.com}
+  \item \textbf{Ziel:} \texttt{<VPN\_IP>:30080} (Tailscale IP + NodePort)
+  \item \textbf{SSL:} DNS Challenge via Cloudflare
+  \item \textbf{Zusätzliche Optionen:} WebSocket-Unterstützung, Custom Headers
+\end{itemize}
+
+\paragraph{Service-Discovery und Load Balancing}
+
+Die Architektur ermöglicht:
+\begin{itemize}
+  \item Routing zu verschiedenen K3s Services über eindeutige Subdomains
+  \item Load Balancing zwischen mehreren Worker Nodes
+  \item Health Checks und automatisches Failover
+  \item Zentrale SSL-Zertifikat-Verwaltung für alle Services
+\end{itemize}
+
+Diese Konfiguration bietet eine professionelle, skalierbare Lösung für sicheren externen Zugriff auf interne Homelab-Services ohne Kompromisse bei der Netzwerk-Sicherheit.

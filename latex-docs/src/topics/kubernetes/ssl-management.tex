@@ -1,0 +1,312 @@
+\subsection{Generelles SSL-Setup-Framework für Homelab-Services}
+
+Dieser Abschnitt dokumentiert das standardisierte Vorgehen zur SSL-Implementierung für beliebige Services im K3s Homelab-Cluster. Das Framework basiert auf einmaliger cert-manager Installation und wiederverwendbaren Templates für neue Services.
+
+\subsubsection{Einmaliges Basis-Setup}
+
+\paragraph{cert-manager Cluster-Installation}
+
+Die initiale Installation von cert-manager erfolgt einmalig pro Cluster und stellt die Grundlage für alle nachfolgenden SSL-Services dar:
+
+\begin{verbatim}
+# cert-manager Installation (einmalig)
+kubectl apply -f \
+  https://github.com/cert-manager/cert-manager/releases/\
+    download/v1.13.2/cert-manager.yaml
+
+# Installation verifizieren
+kubectl wait --for=condition=ready pod -l app=cert-manager \
+  -n cert-manager --timeout=120s
+kubectl wait --for=condition=ready pod -l app=cainjector \
+  -n cert-manager --timeout=120s
+kubectl wait --for=condition=ready pod -l app=webhook \
+  -n cert-manager --timeout=120s
+\end{verbatim}
+
+\paragraph{ClusterIssuer Basis-Konfiguration}
+
+Der ClusterIssuer wird einmalig erstellt und steht anschließend für alle Namespaces zur Verfügung:
+
+\begin{verbatim}
+# File: cluster-issuer-letsencrypt.yaml
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+spec:
+  acme:
+    email: marco@marco-brandt.com  # Eigene E-Mail-Adresse
+    server: https://acme-v02.api.letsencrypt.org/directory
+    privateKeySecretRef:
+      name: letsencrypt-prod-private-key
+    solvers:
+    - http01:
+        ingress:
+          ingressClassName: traefik
+          podTemplate:
+            spec:
+              tolerations:
+              - key: node-role.kubernetes.io/control-plane
+                operator: Exists
+                effect: NoSchedule
+\end{verbatim}
+
+\begin{verbatim}
+# ClusterIssuer anwenden (einmalig)
+kubectl apply -f cluster-issuer-letsencrypt.yaml
+
+# Status verifizieren
+kubectl describe clusterissuer letsencrypt-prod
+\end{verbatim}
+
+\paragraph{DNS-Infrastruktur Vorbereitung}
+
+Die DNS-Konfiguration muss für jede Service-Domain als \textbf{DNS-only} (nicht proxied) konfiguriert werden:
+
+\begin{itemize}
+  \item \textbf{Type:} A Record
+  \item \textbf{Content:} Server Public IP (z.B. \texttt{<PUBLIC\_IP>})
+  \item \textbf{Proxy Status:} DNS only (graue Wolke)
+  \item \textbf{TTL:} Auto oder kurze Werte für schnelle Updates
+\end{itemize}
+
+\subsubsection{Template für neue SSL-Services}
+
+\paragraph{Standard Ingress Template}
+
+Für jeden neuen Service mit SSL-Anforderung wird folgendes Template verwendet:
+
+\begin{verbatim}
+# File: <service-name>-ingress.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: <service-name>-ingress
+  namespace: <namespace>
+  annotations:
+    # Automatisches SSL-Zertifikat von Let's Encrypt
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    # Erzwungene HTTPS-Weiterleitung
+    traefik.ingress.kubernetes.io/redirect-to-https: "true"
+    # Standard-Sicherheits-Header
+    traefik.ingress.kubernetes.io/custom-response-headers: |
+      X-Frame-Options: SAMEORIGIN
+      X-Content-Type-Options: nosniff
+      X-XSS-Protection: 1; mode=block
+      Referrer-Policy: strict-origin-when-cross-origin
+      Strict-Transport-Security: max-age=31536000; \
+        includeSubDomains
+spec:
+  ingressClassName: traefik
+  tls:
+  - hosts:
+    - <service-domain>
+    secretName: <service-name>-letsencrypt-cert
+  rules:
+  - host: <service-domain>
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: <service-name>
+            port:
+              number: <service-port>
+\end{verbatim}
+
+\paragraph{Beispiel-Implementierung für neuen Service}
+
+\textbf{Szenario:} Deployment eines neuen Web-Services \texttt{nextcloud} mit SSL:
+
+\begin{verbatim}
+# 1. DNS-Record erstellen
+# nextcloud.k8s.marco-brandt.com -> <PUBLIC_IP> (DNS only)
+
+# 2. Service und Deployment (Beispiel)
+apiVersion: v1
+kind: Service
+metadata:
+  name: nextcloud
+  namespace: productivity
+spec:
+  selector:
+    app: nextcloud
+  ports:
+  - port: 80
+    targetPort: 80
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nextcloud
+  namespace: productivity
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nextcloud
+  template:
+    metadata:
+      labels:
+        app: nextcloud
+    spec:
+      containers:
+      - name: nextcloud
+        image: nextcloud:latest
+        ports:
+        - containerPort: 80
+\end{verbatim}
+
+\paragraph{Deployment und Verifikation Workflow}
+
+\begin{verbatim}
+# 1. Namespace erstellen (falls erforderlich)
+kubectl create namespace productivity
+
+# 2. Service und Deployment anwenden
+kubectl apply -f nextcloud-deployment.yaml
+
+# 3. SSL-Ingress anwenden
+kubectl apply -f nextcloud-ingress.yaml
+
+# 4. Zertifikat-Ausstellung überwachen
+kubectl get certificate -n productivity -w
+
+# 5. Service-Erreichbarkeit testen
+curl -I https://nextcloud.k8s.marco-brandt.com
+\end{verbatim}
+
+\subsubsection{Automatisierungs-Scripts}
+
+\paragraph{Service SSL-Setup Automatisierung}
+
+Script zur schnellen SSL-Implementierung für neue Services:
+
+\begin{verbatim}
+#!/bin/bash
+# File: setup-ssl-service.sh
+
+SERVICE_NAME=$1
+NAMESPACE=$2
+DOMAIN=$3
+SERVICE_PORT=$4
+
+if [ $# -ne 4 ]; then
+    echo "Usage: $0 <service-name> <namespace> <domain> <service-port>"
+    echo "Example: $0 nextcloud productivity \\"
+    echo "  nextcloud.k8s.marco-brandt.com 80"
+    exit 1
+fi
+
+echo "Setting up SSL for service: $SERVICE_NAME"
+
+# Template für Ingress generieren
+cat > ${SERVICE_NAME}-ingress.yaml << EOF
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ${SERVICE_NAME}-ingress
+  namespace: ${NAMESPACE}
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    traefik.ingress.kubernetes.io/redirect-to-https: "true"
+    traefik.ingress.kubernetes.io/custom-response-headers: |
+      X-Frame-Options: SAMEORIGIN
+      X-Content-Type-Options: nosniff
+      X-XSS-Protection: 1; mode=block
+      Referrer-Policy: strict-origin-when-cross-origin
+      Strict-Transport-Security: max-age=31536000; includeSubDomains
+spec:
+  ingressClassName: traefik
+  tls:
+  - hosts:
+    - ${DOMAIN}
+    secretName: ${SERVICE_NAME}-letsencrypt-cert
+  rules:
+  - host: ${DOMAIN}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: ${SERVICE_NAME}
+            port:
+              number: ${SERVICE_PORT}
+EOF
+
+# Namespace erstellen (falls nicht vorhanden)
+kubectl create namespace ${NAMESPACE} \
+  -dry-run=client -o yaml | kubectl apply -f -
+
+# Ingress anwenden
+kubectl apply -f ${SERVICE_NAME}-ingress.yaml
+
+echo "[SUCCESS] SSL Ingress created for ${SERVICE_NAME}"
+echo "[INFO] Monitor certificate: \
+kubectl get certificate -n ${NAMESPACE} -w"
+echo "[URL] Access URL: https://${DOMAIN}"
+\end{verbatim}
+
+\subsubsection{Best Practices und Troubleshooting}
+
+\paragraph{SSL-Service Standards}
+
+\begin{itemize}
+  \item \textbf{Naming Convention:} \texttt{<service-name>-ingress} für Ingress-Ressourcen
+  \item \textbf{Secret Naming:} \texttt{<service-name>-letsencrypt-cert} für Zertifikat-Secrets
+  \item \textbf{Namespace Isolation:} Logische Gruppierung verwandter Services
+  \item \textbf{Security Headers:} Standardisierte Sicherheits-Header für alle Services
+  \item \textbf{HTTPS Enforcement:} Automatische HTTP-zu-HTTPS-Weiterleitung
+\end{itemize}
+
+\paragraph{Häufige Probleme und Lösungen}
+
+\textbf{Zertifikat-Ausstellung schlägt fehl:}
+
+\begin{verbatim}
+# DNS-Auflösung prüfen
+nslookup <service-domain>
+
+# ACME Challenge Status
+kubectl describe certificate <cert-name> -n <namespace>
+kubectl get challenges -A
+
+# HTTP-Erreichbarkeit testen
+curl -I http://<service-domain>/\
+.well-known/acme-challenge/test
+\end{verbatim}
+
+\textbf{Service nicht über HTTPS erreichbar:}
+
+\begin{verbatim}
+# Ingress-Status überprüfen
+kubectl describe ingress <service-name>-ingress \
+  -n <namespace>
+
+# Service-Endpoint validieren
+kubectl get endpoints <service-name> -n <namespace>
+
+# Pod-Status überprüfen
+kubectl get pods -n <namespace> -l app=<service-name>
+\end{verbatim}
+
+\paragraph{Wartung und Monitoring}
+
+\begin{verbatim}
+# Regelmäßige Zertifikat-Überprüfung
+./monitor-all-certificates.sh
+
+# cert-manager Health Check
+kubectl get pods -n cert-manager
+kubectl logs -n cert-manager \
+  deployment/cert-manager -tail=50
+
+# Traefik Ingress Controller Status
+kubectl get pods -n kube-system \
+  -l app.kubernetes.io/name=traefik
+\end{verbatim}
+
+Dieses Framework ermöglicht eine standardisierte, skalierbare SSL-Implementierung für beliebige Services im Homelab-Cluster mit minimaler Konfiguration pro neuem Service und automatisierter Zertifikat-Verwaltung.

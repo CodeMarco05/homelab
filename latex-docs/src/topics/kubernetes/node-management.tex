@@ -1,0 +1,283 @@
+\subsection{K3s Node Taints und Scheduling}
+
+Dieser Abschnitt dokumentiert die Implementierung von Node Taints, Tolerations und Node Affinity zur präzisen Kontrolle der Pod-Verteilung im K3s Cluster. Diese Mechanismen ermöglichen die strategische Workload-Platzierung auf spezifischen Nodes basierend auf deren Rollen und Eigenschaften.
+
+\subsubsection{Master Node Taint-Konfiguration}
+
+\paragraph{Standard Master Taint anwenden}
+
+Zur Isolation der Control Plane wird der standardmäßige Kubernetes Master Taint angewendet:
+
+\begin{verbatim}
+kubectl taint nodes master \
+  node-role.kubernetes.io/control-plane:NoSchedule
+\end{verbatim}
+
+\paragraph{Taint-Verifikation}
+
+Die erfolgreiche Anwendung des Taints wird durch folgende Befehle validiert:
+
+\begin{verbatim}
+kubectl describe node master | grep -i taint
+
+# Erwartete Ausgabe:
+# Taints: node-role.kubernetes.io/control-plane:NoSchedule
+\end{verbatim}
+
+\paragraph{Pod-Verteilung überprüfen}
+
+Die aktuelle Pod-Distribution kann durch folgenden Befehl eingesehen werden:
+
+\begin{verbatim}
+kubectl get pods -A -o wide
+\end{verbatim}
+
+\textbf{Erwartete Ergebnisse:}
+\begin{itemize}
+  \item System-Pods (kube-system) verbleiben auf dem Master (besitzen entsprechende Tolerations)
+  \item Neue Applikations-Pods werden ausschließlich auf Worker Nodes platziert
+\end{itemize}
+
+\subsubsection{Service-Deployment Strategien}
+
+\paragraph{Standard Deployment (respektiert Taints)}
+
+Ein grundlegendes Deployment ohne spezielle Tolerations wird automatisch von getainteten Nodes ausgeschlossen:
+
+\begin{verbatim}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-app
+  namespace: default
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: web-app
+  template:
+    metadata:
+      labels:
+        app: web-app
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:alpine
+        ports:
+        - containerPort: 80
+\end{verbatim}
+
+\textbf{Resultat:} Scheduling erfolgt ausschließlich auf Worker Nodes ohne Master Tolerations.
+
+\paragraph{Service mit universeller Node-Kompatibilität}
+
+Für Services, die auf allen verfügbaren Nodes ausgeführt werden sollen:
+
+\begin{verbatim}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: monitoring-agent
+  namespace: default
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: monitoring-agent
+  template:
+    metadata:
+      labels:
+        app: monitoring-agent
+    spec:
+      tolerations:
+      - key: node-role.kubernetes.io/control-plane
+        operator: Exists
+        effect: NoSchedule
+      containers:
+      - name: agent
+        image: busybox
+        command: ['sh', '-c', \
+          'while true; do echo "monitoring..."; sleep 30; done']
+\end{verbatim}
+
+\textbf{Resultat:} Scheduling auf sowohl Master- als auch Worker-Nodes möglich.
+
+\subsubsection{Master-exklusive Deployments}
+
+\paragraph{Erzwungenes Master-Scheduling mit nodeSelector}
+
+Für Services, die ausschließlich auf dem Master Node ausgeführt werden sollen:
+
+\begin{verbatim}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: master-only-service
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: master-only-service
+  template:
+    metadata:
+      labels:
+        app: master-only-service
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: master
+      tolerations:
+      - key: node-role.kubernetes.io/control-plane
+        operator: Exists
+        effect: NoSchedule
+      containers:
+      - name: redis
+        image: redis:alpine
+        ports:
+        - containerPort: 6379
+\end{verbatim}
+
+\paragraph{Alternative Implementierung mit Node Affinity}
+
+Eine flexiblere Implementierung unter Verwendung von Node Affinity:
+
+\begin{verbatim}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: master-required-service
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: master-required-service
+  template:
+    metadata:
+      labels:
+        app: master-required-service
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - master
+      tolerations:
+      - key: node-role.kubernetes.io/control-plane
+        operator: Exists
+        effect: NoSchedule
+      containers:
+      - name: database
+        image: postgres:alpine
+        env:
+        - name: POSTGRES_PASSWORD
+          value: "password123"
+\end{verbatim}
+
+\textbf{Vorteil:} Node Affinity bietet erhöhte Flexibilität für Multi-Master-Setups.
+
+\subsubsection{Custom Taint-Management}
+
+\paragraph{Benutzerdefinierte Taints erstellen}
+
+Für spezielle Workload-Anforderungen können benutzerdefinierte Taints erstellt werden:
+
+\begin{verbatim}
+# Dedizierter Database-Node
+kubectl taint nodes kennedy dedicated=database:NoSchedule
+
+# Memory-intensive Workloads
+kubectl taint nodes kennedy workload-type=memory-intensive:NoSchedule
+\end{verbatim}
+
+\paragraph{Custom Taint-Verifikation}
+
+\begin{verbatim}
+kubectl describe node kennedy | grep -i taint
+
+# Erwartete Ausgabe:
+# Taints: dedicated=database:NoSchedule
+#         workload-type=memory-intensive:NoSchedule
+\end{verbatim}
+
+\subsubsection{Administrative Kommandos}
+
+\paragraph{Node-Information abrufen}
+
+\begin{verbatim}
+# Alle Nodes mit Labels und Taints
+kubectl get nodes -o wide
+
+# Detaillierte Node-Information
+kubectl describe node master
+kubectl describe node kennedy
+
+# Pod-Scheduling-Übersicht
+kubectl get pods -A -o wide
+\end{verbatim}
+
+\paragraph{Taint-Management}
+
+\begin{verbatim}
+# Taint hinzufügen
+kubectl taint nodes <node-name> <key>=<value>:<effect>
+
+# Taint entfernen (Minus-Zeichen am Ende beachten)
+kubectl taint nodes <node-name> <key>:<effect>-
+
+# Beispiele:
+kubectl taint nodes kennedy dedicated=database:NoSchedule
+kubectl taint nodes kennedy dedicated:NoSchedule-
+\end{verbatim}
+
+\subsubsection{Referenz-Übersicht}
+
+\paragraph{Taint Effects}
+
+\begin{itemize}
+  \item \textbf{NoSchedule} - Kein Scheduling neuer Pods, bestehende Pods verbleiben
+  \item \textbf{PreferNoSchedule} - Scheduling vermeiden, aber bei Bedarf erlauben
+  \item \textbf{NoExecute} - Kein Scheduling neuer Pods, bestehende Pods werden evicted
+\end{itemize}
+
+\paragraph{Toleration Operators}
+
+\begin{itemize}
+  \item \textbf{Equal} - Exakte key=value Übereinstimmung erforderlich
+  \item \textbf{Exists} - Key-Übereinstimmung unabhängig vom Value
+\end{itemize}
+
+\paragraph{Node-Selektions-Methoden}
+
+\begin{itemize}
+  \item \textbf{nodeSelector} - Einfaches key-value Matching
+  \item \textbf{nodeAffinity (required)} - Verbindliche Übereinstimmung, flexibler als nodeSelector
+  \item \textbf{nodeAffinity (preferred)} - Präferierte Übereinstimmung mit Fallback-Option
+\end{itemize}
+
+\subsubsection{Implementierungs-Workflow}
+
+Die praktische Implementierung erfolgt in folgenden Schritten:
+
+\begin{verbatim}
+# 1. Master Taint anwenden
+kubectl taint nodes master \
+  node-role.kubernetes.io/control-plane:NoSchedule
+
+# 2. Custom Taints konfigurieren
+kubectl taint nodes kennedy dedicated=database:NoSchedule
+
+# 3. Applikationen mit entsprechenden Tolerations deployen
+kubectl apply -f web-app.yaml           # Worker Nodes
+kubectl apply -f master-service.yaml    # Master Node exklusiv
+kubectl apply -f database-service.yaml  # Kennedy Node exklusiv
+
+# 4. Pod-Platzierung verifizieren
+kubectl get pods -A -o wide
+\end{verbatim}
+
+Diese Konfiguration ermöglicht eine präzise Kontrolle der Workload-Verteilung unter Beachtung der Kubernetes Best Practices und gewährleistet optimale Ressourcennutzung im Homelab-Cluster.

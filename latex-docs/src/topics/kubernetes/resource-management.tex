@@ -1,0 +1,203 @@
+\subsection{K3s Master Node Ressourcen-Management}
+
+Dieser Abschnitt dokumentiert die Implementierung von systemd-basierten Ressourcenbeschränkungen für den K3s Master Node zur Vermeidung von Ressourcen-Überbelegung und zur Gewährleistung stabiler Cluster-Performance.
+
+\subsubsection{Problemstellung und Zielsetzung}
+
+\paragraph{Ressourcen-Herausforderungen im Homelab}
+
+K3s Master Nodes in ressourcenbeschränkten Homelab-Umgebungen erfordern präzise Ressourcenkontrolle:
+
+\begin{itemize}
+  \item \textbf{Memory Pressure} - Unkontrollierte Speichernutzung kann System-Instabilität verursachen
+  \item \textbf{CPU Überlastung} - Übermäßige CPU-Nutzung beeinträchtigt Control Plane Performance
+  \item \textbf{System Responsiveness} - Host-System muss für administrative Aufgaben verfügbar bleiben
+  \item \textbf{Resource Contention} - Andere Services benötigen garantierte Ressourcen-Reservierung
+\end{itemize}
+
+\paragraph{Zielsetzung der Ressourcenbeschränkung}
+
+\begin{itemize}
+  \item Stabile K3s Control Plane Operation bei begrenzten Ressourcen
+  \item Vermeidung von OOM-Killer-Ereignissen durch Memory-Limits
+  \item CPU-Throttling zur Erhaltung der System-Responsiveness
+  \item Proaktive Ressourcen-Überwachung und -Steuerung
+\end{itemize}
+
+\subsubsection{systemd Service Unit Konfiguration}
+
+\paragraph{Erweiterte K3s Service Unit}
+
+Die systemd Service Unit wird um Ressourcenbeschränkungen für 8GB RAM Server erweitert:
+
+\begin{verbatim}
+# File: /etc/systemd/system/k3s.service
+
+[Unit]
+Description=Lightweight Kubernetes
+Documentation=https://k3s.io
+Wants=network-online.target
+After=network-online.target
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+Type=notify
+EnvironmentFile=-/etc/default/%N
+EnvironmentFile=-/etc/sysconfig/%N
+EnvironmentFile=-/etc/systemd/system/k3s.service.env
+KillMode=process
+Delegate=yes
+User=root
+
+# Standard Limits für Container-Performance
+LimitNOFILE=1048576
+LimitNPROC=infinity
+LimitCORE=infinity
+TasksMax=infinity
+
+# Ressourcenbeschränkungen für 8GB RAM Server
+MemoryMax=6963M       # Maximaler RAM-Verbrauch (~85% von 8GB)
+MemoryHigh=6553M      # High-Water-Mark für Memory Pressure \
+                      # (~80% von 8GB)
+CPUQuota=85%          # CPU-Limitierung auf 85% aller verfügbaren Cores
+
+TimeoutStartSec=0
+Restart=always
+RestartSec=5s
+
+ExecStartPre=/bin/sh -xc \
+  '! /usr/bin/systemctl is-enabled --quiet \
+    nm-cloud-setup.service 2>/dev/null'
+ExecStartPre=-/sbin/modprobe br_netfilter
+ExecStartPre=-/sbin/modprobe overlay
+
+ExecStart=/usr/local/bin/k3s \
+    server \
+    '--node-name=master' \
+    '--write-kubeconfig-mode=644' \
+    '--node-ip=<VPN_IP>' \
+    '--advertise-address=<VPN_IP>' \
+    '--node-external-ip=<PUBLIC_IP>' \
+    '--flannel-iface=tailscale0' \
+    '--tls-san=<VPN_IP>' \
+    '--tls-san=<PUBLIC_IP>' \
+    '--tls-san=localhost' \
+    '--tls-san=127.0.0.1'
+\end{verbatim}
+
+\subsubsection{Ressourcen-Parameter Erklärung}
+
+\paragraph{Memory Management Parameter}
+
+\textbf{MemoryMax=6963M (Harte Memory-Grenze):}
+\begin{itemize}
+  \item Absolute Obergrenze für RAM-Verbrauch des K3s Service
+  \item Berechnung: 8GB x 0.85 = 6.8GB ca. 6963MB
+  \item Verhindert OOM-Killer-Ereignisse auf System-Ebene
+  \item Reserviert ~1.2GB für Host-System und andere Services
+\end{itemize}
+
+\textbf{MemoryHigh=6553M (Soft Memory-Limit):}
+\begin{itemize}
+  \item Auslöser für proaktive Memory-Bereinigung
+  \item Berechnung: 8GB x 0.80 = 6.4GB ca. 6553MB
+  \item Aktiviert Kernel Memory Reclaim vor Erreichen der harten Grenze
+  \item Reduziert Memory Pressure durch präventive Garbage Collection
+\end{itemize}
+
+\paragraph{CPU Management Parameter}
+
+\textbf{CPUQuota=85\%:}
+\begin{itemize}
+  \item Beschränkung auf 85\% aller verfügbaren CPU-Cores
+  \item Beispiel: 4-Core System -> 3.4 Cores für K3s verfügbar
+  \item Gewährleistet CPU-Reservierung für Host-System-Aufgaben
+  \item Verhindert vollständige CPU-Sättigung durch Kubernetes Workloads
+\end{itemize}
+
+\subsubsection{Implementierung und Aktivierung}
+
+\paragraph{Service Unit Deployment}
+
+\begin{verbatim}
+# Bestehenden K3s Service stoppen
+sudo systemctl stop k3s
+
+# Service Unit aktualisieren
+sudo cp k3s.service /etc/systemd/system/k3s.service
+
+# systemd Daemon neu laden
+sudo systemctl daemon-reload
+
+# Service Unit validieren
+sudo systemctl cat k3s.service
+
+# K3s Service mit neuen Limits starten
+sudo systemctl start k3s
+sudo systemctl enable k3s
+\end{verbatim}
+
+\paragraph{Ressourcen-Limit Verifikation}
+
+\begin{verbatim}
+# Service Status mit Ressourcen-Information
+sudo systemctl status k3s
+
+# Detaillierte Ressourcen-Limits anzeigen
+sudo systemctl show k3s | grep -E "(Memory|CPU)"
+
+# Live-Ressourcen-Verbrauch überwachen
+sudo systemctl show k3s | grep -E "(MemoryCurrent|CPUUsage)"
+\end{verbatim}
+
+\subsubsection{Monitoring und Überwachung}
+
+\paragraph{Ressourcen-Verbrauch Monitoring}
+
+\begin{verbatim}
+# Memory-Verbrauch des K3s Service
+sudo systemd-cgtop -p -1 | grep k3s
+
+# Detailliertes cgroup Memory-Status
+cat /sys/fs/cgroup/system.slice/k3s.service/memory.current
+cat /sys/fs/cgroup/system.slice/k3s.service/memory.max
+cat /sys/fs/cgroup/system.slice/k3s.service/memory.high
+
+# CPU-Verbrauch und Throttling
+cat /sys/fs/cgroup/system.slice/k3s.service/cpu.stat
+\end{verbatim}
+
+\subsubsection{Tuning und Anpassungen}
+
+\paragraph{RAM-basierte Konfigurationsempfehlungen}
+
+\textbf{Für 4GB RAM Server:}
+\begin{verbatim}
+MemoryMax=3276M      # ~80% von 4GB
+MemoryHigh=2949M     # ~72% von 4GB
+CPUQuota=80%         # Konservativer für begrenzte Ressourcen
+\end{verbatim}
+
+\textbf{Für 16GB RAM Server:}
+\begin{verbatim}
+MemoryMax=13926M     # ~85% von 16GB
+MemoryHigh=13107M    # ~80% von 16GB
+CPUQuota=90%         # Weniger restriktiv bei mehr Ressourcen
+\end{verbatim}
+
+\paragraph{Performance-Optimierung Parameter}
+
+\begin{verbatim}
+# Zusätzliche systemd Parameter für Performance
+IOWeight=500              # I/O Priorität reduzieren
+Nice=5                   # Niedrigere CPU-Priorität
+OOMScoreAdjust=100       # OOM-Killer Präferenz erhöhen
+
+# cgroup v2 spezifische Optimierungen
+MemorySwapMax=2G         # Swap-Nutzung begrenzen
+IODeviceLatencyTargetSec=100ms  # I/O Latenz-Ziel
+\end{verbatim}
+
+Diese Ressourcenbeschränkungen gewährleisten einen stabilen K3s Master Node Betrieb in ressourcenbeschränkten Homelab-Umgebungen durch proaktive Ressourcenkontrolle und systemd-basierte Limits.

@@ -1,0 +1,72 @@
+\subsection{Hardware Setup und ZFS Konfiguration}
+
+Der Server ist nun fertig aufgebaut und läuft. Die Hardware ist in der Anlage zu finden. Momentan ist es so, dass die zwei SSDs in einem Mirror laufen in einem zfs pool. Diesen kann man wie folgt anlegen:
+
+Zuerst habe ich die beiden SSDs formatiert.
+
+\begin{verbatim}
+# anzeigen der SSDs
+lsblk -o NAME,SIZE,MODEL,TYPE,MOUNTPOINT
+
+# oder
+fdisk -l 
+
+# formatieren der Dateisystemsignatur
+wipefs -a /dev/sdX
+
+# formatieren des partitionstables
+sgdisk --zap-all /dev/sdX
+\end{verbatim}
+
+Dann habe ich den ZFS Pool erstellt:
+
+\begin{verbatim}
+# ZFS Pool mit Mirror erstellen
+sudo zpool create -o ashift=12 homelab-pool mirror /dev/sda /dev/sdb
+
+# Pool Status überprüfen
+sudo zpool status
+
+# Pool Eigenschaften anzeigen
+sudo zpool list
+
+# Automatic snapshots aktivieren
+sudo zfs set com.sun:auto-snapshot=true homelab-pool
+\end{verbatim}
+
+\subsubsection{ZFS Dataset Konfiguration}
+
+Für bessere Organisation werden verschiedene Datasets erstellt:
+
+\begin{verbatim}
+# Datasets für verschiedene Anwendungen erstellen
+sudo zfs create homelab-pool/containers
+sudo zfs create homelab-pool/data
+sudo zfs create homelab-pool/backups
+
+# Compression aktivieren für bessere Speichereffizienz
+sudo zfs set compression=lz4 homelab-pool
+sudo zfs set compression=gzip-9 homelab-pool/backups
+
+# Deduplication für Backup-Dataset
+sudo zfs set dedup=on homelab-pool/backups
+\end{verbatim}
+
+\subsubsection{Monitoring und Wartung}
+
+\begin{verbatim}
+# Pool Health Check
+sudo zpool status -v
+
+# Scrub für Datenintegrität
+sudo zpool scrub homelab-pool
+
+# Scrub Status überprüfen
+sudo zpool status | grep scrub
+
+# ZFS Statistiken
+sudo zpool iostat 1
+
+# Verfügbarer Speicher
+sudo zfs list
+\end{verbatim}

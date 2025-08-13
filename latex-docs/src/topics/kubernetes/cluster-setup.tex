@@ -1,0 +1,167 @@
+\subsection{K3s Cluster Setup}
+
+Dieser Abschnitt dokumentiert die Implementierung eines K3s Clusters. K3s ist eine leichtgewichtige Kubernetes-Distribution, die sich optimal für Homelab-Umgebungen und Edge-Computing-Szenarien eignet.
+
+\subsubsection{Systemvorbereitung}
+
+Zunächst werden alle Pakete auf dem Zielsystem aktualisiert:
+
+\begin{verbatim}
+sudo apt update && sudo apt upgrade -y
+\end{verbatim}
+
+\subsubsection{OpenSSH Server Installation}
+
+Für die Remote-Verwaltung der Cluster-Nodes wird der OpenSSH Server installiert:
+
+\begin{verbatim}
+sudo apt install openssh-server -y
+sudo systemctl enable ssh
+sudo systemctl start ssh
+\end{verbatim}
+
+Die SSH-Konfiguration wird für Key-basierte Authentifizierung angepasst, um die Sicherheit zu erhöhen:
+
+\begin{verbatim}
+sudo nano /etc/ssh/sshd_config
+# PasswordAuthentication no
+# PubkeyAuthentication yes
+sudo systemctl restart ssh
+\end{verbatim}
+
+\subsubsection{Tailscale-Netzwerk-Integration}
+
+Zur Etablierung einer sicheren Mesh-Netzwerk-Verbindung zwischen den Nodes wird Tailscale implementiert:
+
+\begin{verbatim}
+curl -fsSL https://tailscale.com/install.sh | sh
+sudo tailscale up
+\end{verbatim}
+
+Nach der Installation wird ein Authentifizierungslink generiert, welcher in einem Webbrowser aufgerufen werden muss.
+
+\subsubsection{Master Node Deployment}
+
+Der K3s Master Node (Control Plane) wird mit folgender Konfiguration bereitgestellt:
+
+\begin{verbatim}
+curl -sfL https://get.k3s.io | sh -s - server \
+  --node-ip=100.93.96.107
+\end{verbatim}
+
+Nach erfolgreicher Installation wird das Node Token extrahiert:
+
+\begin{verbatim}
+sudo cat /var/lib/rancher/k3s/server/node-token
+\end{verbatim}
+
+\subsubsection{Worker Node Integration}
+
+Die Worker Nodes werden mittels folgendem Befehl dem bestehenden Cluster hinzugefügt:
+
+\begin{verbatim}
+curl -sfL https://get.k3s.io | \
+  K3S_URL=https://<master-node-ip>:6443 \
+  K3S_TOKEN=<TOKEN> \
+  sh -s - agent --node-ip=<worker-tailscale-ip>
+\end{verbatim}
+
+Der Platzhalter \texttt{<TOKEN>} wird durch das zuvor extrahierte Node Token ersetzt.
+
+\subsubsection{CLI-Tools und Verwaltungsoptimierung}
+
+Zur Verbesserung der Benutzerfreundlichkeit wird ein Alias für kubectl konfiguriert:
+
+\begin{verbatim}
+echo 'alias k=kubectl' >> ~/.bashrc
+source ~/.bashrc
+\end{verbatim}
+
+Zusätzlich wird k9s als Terminal-basierte Cluster-Verwaltungsschnittstelle installiert:
+
+\begin{verbatim}
+brew install k9s
+\end{verbatim}
+
+Die Kubernetes-Konfiguration wird für den aktuellen Benutzer verfügbar gemacht:
+
+\begin{verbatim}
+mkdir ~/.kube
+sudo cp /etc/rancher/k3s/k3s.yaml ~/.kube/config
+sudo chown $USER:$USER ~/.kube/config
+\end{verbatim}
+
+Die Cluster-Verwaltung kann nun über die \texttt{k9s} Terminal-UI erfolgen.
+
+Der K3s Cluster ist erfolgreich implementiert und betriebsbereit für nachfolgende Workload-Deployments.
+
+\subsubsection{Erweiterte VPN-Konfiguration für K3s}
+
+Für komplexere Netzwerk-Setups mit VPN-Lösungen ist eine explizite Kontrolle über die verwendeten IP-Adressen und Netzwerkschnittstellen erforderlich. Dieses Template ermöglicht die präzise Konfiguration von K3s mit VPN-IPs, öffentlichen IPs und spezifischen Netzwerk-Interfaces.
+
+\paragraph{K3s Server Installation mit VPN-Parametern}
+
+Die Server-Installation erfolgt mit erweiterten Netzwerk-Parametern:
+
+\begin{verbatim}
+curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="\
+--node-ip=<VPN_IP> \
+--advertise-address=<VPN_IP> \
+--node-external-ip=<PUBLIC_IP> \
+--flannel-iface=<VPN_INTERFACE> \
+--tls-san=<VPN_IP> \
+--tls-san=<PUBLIC_IP> \
+--tls-san=localhost \
+--tls-san=127.0.0.1" \
+sh -
+\end{verbatim}
+
+\textbf{Parameter-Beschreibung:}
+\begin{itemize}
+  \item \texttt{<VPN\_IP>} - VPN/Private IP des Servers für Cluster-internen Traffic
+  \item \texttt{<PUBLIC\_IP>} - Öffentliche IP des Servers (optional)
+  \item \texttt{<VPN\_INTERFACE>} - Name der VPN-Netzwerkschnittstelle (z.B. \texttt{wg0}, \texttt{tun0})
+\end{itemize}
+
+\paragraph{Join-Token extrahieren}
+
+Das Server-Token wird für die Worker-Node-Integration benötigt:
+
+\begin{verbatim}
+sudo cat /var/lib/rancher/k3s/server/node-token
+\end{verbatim}
+
+\paragraph{K3s Worker Installation mit VPN-Konfiguration}
+
+Die Worker-Nodes werden mit entsprechender VPN-Konfiguration hinzugefügt:
+
+\begin{verbatim}
+curl -sfL https://get.k3s.io | K3S_URL=https://<MASTER_VPN_IP>:6443 \
+K3S_TOKEN=<K3S_TOKEN> \
+INSTALL_K3S_EXEC="\
+--node-ip=<WORKER_VPN_IP> \
+--flannel-iface=<VPN_INTERFACE>" \
+sh -
+\end{verbatim}
+
+\textbf{Parameter-Beschreibung:}
+\begin{itemize}
+  \item \texttt{<K3S\_TOKEN>} - Token vom Server-Node
+  \item \texttt{<WORKER\_VPN\_IP>} - VPN/Private IP des Worker-Nodes
+\end{itemize}
+
+\paragraph{Cluster-Verifikation}
+
+Die erfolgreiche Konfiguration wird durch Node-Überprüfung validiert:
+
+\begin{verbatim}
+kubectl get nodes -o wide
+\end{verbatim}
+
+Erwartete Spalten-Zuordnung:
+\begin{itemize}
+  \item \textbf{INTERNAL-IP} - VPN-IP-Adressen
+  \item \textbf{EXTERNAL-IP} - Öffentliche IP-Adressen (falls konfiguriert)
+\end{itemize}
+
+Diese Konfiguration ermöglicht eine sichere und flexible Cluster-Kommunikation über VPN-Verbindungen bei gleichzeitiger Kontrolle über externe Erreichbarkeit.
