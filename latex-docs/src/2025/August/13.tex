@@ -373,24 +373,24 @@ kubectl describe pod <pod-name>
 \paragraph{Taint Effects}
 
 \begin{itemize}
-  \item \textbf{NoSchedule} -- Kein Scheduling neuer Pods, bestehende Pods verbleiben
-  \item \textbf{PreferNoSchedule} -- Scheduling vermeiden, aber bei Bedarf erlauben
-  \item \textbf{NoExecute} -- Kein Scheduling neuer Pods, bestehende Pods werden evicted
+  \item \textbf{NoSchedule} - Kein Scheduling neuer Pods, bestehende Pods verbleiben
+  \item \textbf{PreferNoSchedule} - Scheduling vermeiden, aber bei Bedarf erlauben
+  \item \textbf{NoExecute} - Kein Scheduling neuer Pods, bestehende Pods werden evicted
 \end{itemize}
 
 \paragraph{Toleration Operators}
 
 \begin{itemize}
-  \item \textbf{Equal} -- Exakte key=value Übereinstimmung erforderlich
-  \item \textbf{Exists} -- Key-Übereinstimmung unabhängig vom Value
+  \item \textbf{Equal} - Exakte key=value Übereinstimmung erforderlich
+  \item \textbf{Exists} - Key-Übereinstimmung unabhängig vom Value
 \end{itemize}
 
 \paragraph{Node-Selektions-Methoden}
 
 \begin{itemize}
-  \item \textbf{nodeSelector} -- Einfaches key-value Matching
-  \item \textbf{nodeAffinity (required)} -- Verbindliche Übereinstimmung, flexibler als nodeSelector
-  \item \textbf{nodeAffinity (preferred)} -- Präferierte Übereinstimmung mit Fallback-Option
+  \item \textbf{nodeSelector} - Einfaches key-value Matching
+  \item \textbf{nodeAffinity (required)} - Verbindliche Übereinstimmung, flexibler als nodeSelector
+  \item \textbf{nodeAffinity (preferred)} - Präferierte Übereinstimmung mit Fallback-Option
 \end{itemize}
 
 \subsubsection{Implementierungs-Workflow}
@@ -435,12 +435,12 @@ Dieser Abschnitt dokumentiert die vollständige Implementierung eines Monitoring
 Das implementierte System umfasst folgende Kernkomponenten:
 
 \begin{itemize}
-  \item \textbf{Prometheus} -- Metriken-Sammlung und -Speicherung mit 15-Tage-Retention
-  \item \textbf{Grafana} -- Dashboard-Visualisierung mit SSL-optimierter Konfiguration
-  \item \textbf{AlertManager} -- Benachrichtigungs- und Alerting-System
-  \item \textbf{Node Exporter} -- Hardware- und OS-Metriken-Erfassung
-  \item \textbf{cert-manager} -- Automatische SSL-Zertifikat-Verwaltung
-  \item \textbf{Let's Encrypt} -- Kostenlose SSL-Zertifikate mit 60-Tage-Auto-Renewal
+  \item \textbf{Prometheus} - Metriken-Sammlung und -Speicherung mit 15-Tage-Retention
+  \item \textbf{Grafana} - Dashboard-Visualisierung mit SSL-optimierter Konfiguration
+  \item \textbf{AlertManager} - Benachrichtigungs- und Alerting-System
+  \item \textbf{Node Exporter} - Hardware- und OS-Metriken-Erfassung
+  \item \textbf{cert-manager} - Automatische SSL-Zertifikat-Verwaltung
+  \item \textbf{Let's Encrypt} - Kostenlose SSL-Zertifikate mit 60-Tage-Auto-Renewal
 \end{itemize}
 
 \subsubsection{Helm und Repository-Konfiguration}
@@ -509,12 +509,12 @@ kubectl apply -f \
   https://github.com/cert-manager/cert-manager/releases/download/v1.13.2/cert-manager.yaml
 
 # Pod-Bereitschaft überwachen
-kubectl wait --for=condition=ready pod -l app=cert-manager \
-  -n cert-manager --timeout=120s
-kubectl wait --for=condition=ready pod -l app=cainjector \
-  -n cert-manager --timeout=120s
-kubectl wait --for=condition=ready pod -l app=webhook \
-  -n cert-manager --timeout=120s
+kubectl wait -for=condition=ready pod -l app=cert-manager \
+  -n cert-manager -timeout=120s
+kubectl wait -for=condition=ready pod -l app=cainjector \
+  -n cert-manager -timeout=120s
+kubectl wait -for=condition=ready pod -l app=webhook \
+  -n cert-manager -timeout=120s
 
 # Installation verifizieren
 kubectl get pods -n cert-manager
@@ -687,10 +687,11 @@ alertmanager:
 kubectl apply -f letsencrypt-issuer.yaml
 
 # Monitoring Stack installieren
-helm install prometheus prometheus-community/kube-prometheus-stack \
-  --namespace monitoring \
-  --values monitoring-values.yaml \
-  --wait
+helm install prometheus \
+  prometheus-community/kube-prometheus-stack \
+  -namespace monitoring \
+  -values monitoring-values.yaml \
+  -wait
 
 # Grafana Ingress mit SSL erstellen
 kubectl apply -f grafana-ingress.yaml
@@ -703,13 +704,15 @@ kubectl apply -f grafana-ingress.yaml
 kubectl get certificate -n monitoring -w
 
 # Detaillierte Zertifikat-Information
-kubectl describe certificate grafana-letsencrypt-cert -n monitoring
+kubectl describe certificate \
+  grafana-letsencrypt-cert -n monitoring
 
 # ACME Challenge Status überprüfen
 kubectl get challenges -A
 
 # cert-manager Logs analysieren
-kubectl logs -n cert-manager deployment/cert-manager --tail=20
+kubectl logs -n cert-manager \
+  deployment/cert-manager -tail=20
 \end{verbatim}
 
 \paragraph{Zertifikat-Gültigkeit Validierung}
@@ -719,7 +722,8 @@ kubectl logs -n cert-manager deployment/cert-manager --tail=20
 curl -I https://grafana.k8s.marco-brandt.com
 
 # Zertifikat-Ablaufdatum überprüfen
-kubectl get secret grafana-letsencrypt-cert -n monitoring \
+kubectl get secret grafana-letsencrypt-cert \
+  -n monitoring \
   -o jsonpath='{.data.tls\.crt}' | \
   base64 -d | \
   openssl x509 -noout -dates
@@ -742,7 +746,8 @@ Nach erfolgreicher Zertifikat-Ausstellung:
 \begin{verbatim}
 # Prometheus UI über Port-Forward zugänglich machen
 kubectl port-forward -n monitoring \
-  svc/prometheus-kube-prometheus-prometheus 9090:9090
+  svc/prometheus-kube-prometheus-prometheus \
+  9090:9090
 
 # Zugriff über: http://localhost:9090
 \end{verbatim}
@@ -752,7 +757,8 @@ kubectl port-forward -n monitoring \
 \begin{verbatim}
 # AlertManager UI über Port-Forward zugänglich machen
 kubectl port-forward -n monitoring \
-  svc/prometheus-kube-prometheus-alertmanager 9093:9093
+  svc/prometheus-kube-prometheus-alertmanager \
+  9093:9093
 
 # Zugriff über: http://localhost:9093
 \end{verbatim}
@@ -764,12 +770,12 @@ kubectl port-forward -n monitoring \
 Der Monitoring Stack umfasst folgende essenzielle Dashboards:
 
 \begin{itemize}
-  \item \textbf{Kubernetes / Compute Resources / Cluster} -- Cluster-Gesamt-Metriken
-  \item \textbf{Kubernetes / Compute Resources / Node (Pods)} -- Pro-Node Pod-Metriken
-  \item \textbf{Kubernetes / Compute Resources / Pod} -- Individuelle Pod-Metriken
-  \item \textbf{Node Exporter / Nodes} -- Detaillierte Hardware-Metriken
-  \item \textbf{Kubernetes / API Server} -- Kubernetes API Performance
-  \item \textbf{Prometheus / Overview} -- Prometheus interne Metriken
+  \item \textbf{Kubernetes / Compute Resources / Cluster} - Cluster-Gesamt-Metriken
+  \item \textbf{Kubernetes / Compute Resources / Node (Pods)} - Pro-Node Pod-Metriken
+  \item \textbf{Kubernetes / Compute Resources / Pod} - Individuelle Pod-Metriken
+  \item \textbf{Node Exporter / Nodes} - Detaillierte Hardware-Metriken
+  \item \textbf{Kubernetes / API Server} - Kubernetes API Performance
+  \item \textbf{Prometheus / Overview} - Prometheus interne Metriken
 \end{itemize}
 
 \paragraph{OpenLens Integration}
@@ -779,7 +785,8 @@ Prometheus-Integration in OpenLens:
 \begin{verbatim}
 # OpenLens Einstellungen → Metrics
 # Prometheus Endpoint:
-http://prometheus-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090
+http://prometheus-kube-prometheus-prometheus.\
+monitoring.svc.cluster.local:9090
 \end{verbatim}
 
 \subsubsection{Wartung und Troubleshooting}
@@ -799,9 +806,10 @@ http://prometheus-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090
 helm repo update
 
 # Monitoring Stack upgraden
-helm upgrade prometheus prometheus-community/kube-prometheus-stack \
-  --namespace monitoring \
-  --values monitoring-values.yaml
+helm upgrade prometheus \
+  prometheus-community/kube-prometheus-stack \
+  -namespace monitoring \
+  -values monitoring-values.yaml
 \end{verbatim}
 
 \paragraph{Häufige Troubleshooting-Szenarien}
@@ -813,7 +821,8 @@ helm upgrade prometheus prometheus-community/kube-prometheus-stack \
 kubectl describe challenges -A
 
 # Traefik Logs analysieren
-kubectl logs -n kube-system deployment/traefik --tail=20
+kubectl logs -n kube-system \
+  deployment/traefik -tail=20
 
 # DNS-Auflösung validieren
 nslookup grafana.k8s.marco-brandt.com
@@ -844,3 +853,707 @@ kubectl get pvc -n monitoring
 \end{verbatim}
 
 Die implementierte Monitoring-Lösung bietet eine professionelle, produktionsreife Observability-Infrastruktur mit automatisierter SSL-Verwaltung und gewährleistet langfristige Wartbarkeit des K3s Homelab-Clusters.
+
+\subsection{Generelles SSL-Setup-Framework für Homelab-Services}
+
+Dieser Abschnitt dokumentiert das standardisierte Vorgehen zur SSL-Implementierung für beliebige Services im K3s Homelab-Cluster. Das Framework basiert auf einmaliger cert-manager Installation und wiederverwendbaren Templates für neue Services.
+
+\subsubsection{Einmaliges Basis-Setup}
+
+\paragraph{cert-manager Cluster-Installation}
+
+Die initiale Installation von cert-manager erfolgt einmalig pro Cluster und stellt die Grundlage für alle nachfolgenden SSL-Services dar:
+
+\begin{verbatim}
+# cert-manager Installation (einmalig)
+kubectl apply -f \
+  https://github.com/cert-manager/cert-manager/releases/download/v1.13.2/cert-manager.yaml
+
+# Installation verifizieren
+kubectl wait -for=condition=ready pod -l app=cert-manager \
+  -n cert-manager -timeout=120s
+kubectl wait -for=condition=ready pod -l app=cainjector \
+  -n cert-manager -timeout=120s
+kubectl wait -for=condition=ready pod -l app=webhook \
+  -n cert-manager -timeout=120s
+\end{verbatim}
+
+\paragraph{ClusterIssuer Basis-Konfiguration}
+
+Der ClusterIssuer wird einmalig erstellt und steht anschließend für alle Namespaces zur Verfügung:
+
+\begin{verbatim}
+# File: cluster-issuer-letsencrypt.yaml
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+spec:
+  acme:
+    email: marco@marco-brandt.com  # Eigene E-Mail-Adresse
+    server: https://acme-v02.api.letsencrypt.org/directory
+    privateKeySecretRef:
+      name: letsencrypt-prod-private-key
+    solvers:
+    - http01:
+        ingress:
+          ingressClassName: traefik
+          podTemplate:
+            spec:
+              tolerations:
+              - key: node-role.kubernetes.io/control-plane
+                operator: Exists
+                effect: NoSchedule
+\end{verbatim}
+
+\begin{verbatim}
+# ClusterIssuer anwenden (einmalig)
+kubectl apply -f cluster-issuer-letsencrypt.yaml
+
+# Status verifizieren
+kubectl describe clusterissuer letsencrypt-prod
+\end{verbatim}
+
+\paragraph{DNS-Infrastruktur Vorbereitung}
+
+Die DNS-Konfiguration muss für jede Service-Domain als \textbf{DNS-only} (nicht proxied) konfiguriert werden:
+
+\begin{itemize}
+  \item \textbf{Type:} A Record
+  \item \textbf{Content:} Server Public IP (z.B. \texttt{138.199.218.161})
+  \item \textbf{Proxy Status:} DNS only (graue Wolke)
+  \item \textbf{TTL:} Auto oder kurze Werte für schnelle Updates
+\end{itemize}
+
+\subsubsection{Template für neue SSL-Services}
+
+\paragraph{Standard Ingress Template}
+
+Für jeden neuen Service mit SSL-Anforderung wird folgendes Template verwendet:
+
+\begin{verbatim}
+# File: <service-name>-ingress.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: <service-name>-ingress
+  namespace: <namespace>
+  annotations:
+    # Automatisches SSL-Zertifikat von Let's Encrypt
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    # Erzwungene HTTPS-Weiterleitung
+    traefik.ingress.kubernetes.io/redirect-to-https: "true"
+    # Standard-Sicherheits-Header
+    traefik.ingress.kubernetes.io/custom-response-headers: |
+      X-Frame-Options: SAMEORIGIN
+      X-Content-Type-Options: nosniff
+      X-XSS-Protection: 1; mode=block
+      Referrer-Policy: strict-origin-when-cross-origin
+      Strict-Transport-Security: max-age=31536000; includeSubDomains
+spec:
+  ingressClassName: traefik
+  tls:
+  - hosts:
+    - <service-domain>
+    secretName: <service-name>-letsencrypt-cert
+  rules:
+  - host: <service-domain>
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: <service-name>
+            port:
+              number: <service-port>
+\end{verbatim}
+
+\paragraph{Beispiel-Implementierung für neuen Service}
+
+\textbf{Szenario:} Deployment eines neuen Web-Services \texttt{nextcloud} mit SSL:
+
+\begin{verbatim}
+# 1. DNS-Record erstellen
+# nextcloud.k8s.marco-brandt.com → 138.199.218.161 (DNS only)
+
+# 2. Service und Deployment (Beispiel)
+apiVersion: v1
+kind: Service
+metadata:
+  name: nextcloud
+  namespace: productivity
+spec:
+  selector:
+    app: nextcloud
+  ports:
+  - port: 80
+    targetPort: 80
+  type: ClusterIP
+--
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nextcloud
+  namespace: productivity
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nextcloud
+  template:
+    metadata:
+      labels:
+        app: nextcloud
+    spec:
+      containers:
+      - name: nextcloud
+        image: nextcloud:latest
+        ports:
+        - containerPort: 80
+\end{verbatim}
+
+\begin{verbatim}
+# 3. SSL-Ingress aus Template erstellen
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: nextcloud-ingress
+  namespace: productivity
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    traefik.ingress.kubernetes.io/redirect-to-https: "true"
+    traefik.ingress.kubernetes.io/custom-response-headers: |
+      X-Frame-Options: SAMEORIGIN
+      X-Content-Type-Options: nosniff
+      X-XSS-Protection: 1; mode=block
+      Referrer-Policy: strict-origin-when-cross-origin
+      Strict-Transport-Security: max-age=31536000; includeSubDomains
+spec:
+  ingressClassName: traefik
+  tls:
+  - hosts:
+    - nextcloud.k8s.marco-brandt.com
+    secretName: nextcloud-letsencrypt-cert
+  rules:
+  - host: nextcloud.k8s.marco-brandt.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: nextcloud
+            port:
+              number: 80
+\end{verbatim}
+
+\paragraph{Deployment und Verifikation Workflow}
+
+\begin{verbatim}
+# 1. Namespace erstellen (falls erforderlich)
+kubectl create namespace productivity
+
+# 2. Service und Deployment anwenden
+kubectl apply -f nextcloud-deployment.yaml
+
+# 3. SSL-Ingress anwenden
+kubectl apply -f nextcloud-ingress.yaml
+
+# 4. Zertifikat-Ausstellung überwachen
+kubectl get certificate -n productivity -w
+
+# 5. Service-Erreichbarkeit testen
+curl -I https://nextcloud.k8s.marco-brandt.com
+\end{verbatim}
+
+\subsubsection{Automatisierungs-Scripts}
+
+\paragraph{Service SSL-Setup Automatisierung}
+
+Script zur schnellen SSL-Implementierung für neue Services:
+
+\begin{verbatim}
+#!/bin/bash
+# File: setup-ssl-service.sh
+
+SERVICE_NAME=$1
+NAMESPACE=$2
+DOMAIN=$3
+SERVICE_PORT=$4
+
+if [ $# -ne 4 ]; then
+    echo "Usage: $0 <service-name> <namespace> <domain> <service-port>"
+    echo "Example: $0 nextcloud productivity \\"
+    echo "  nextcloud.k8s.marco-brandt.com 80"
+    exit 1
+fi
+
+echo "Setting up SSL for service: $SERVICE_NAME"
+
+# Template für Ingress generieren
+cat > ${SERVICE_NAME}-ingress.yaml << EOF
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ${SERVICE_NAME}-ingress
+  namespace: ${NAMESPACE}
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    traefik.ingress.kubernetes.io/redirect-to-https: "true"
+    traefik.ingress.kubernetes.io/custom-response-headers: |
+      X-Frame-Options: SAMEORIGIN
+      X-Content-Type-Options: nosniff
+      X-XSS-Protection: 1; mode=block
+      Referrer-Policy: strict-origin-when-cross-origin
+      Strict-Transport-Security: max-age=31536000; includeSubDomains
+spec:
+  ingressClassName: traefik
+  tls:
+  - hosts:
+    - ${DOMAIN}
+    secretName: ${SERVICE_NAME}-letsencrypt-cert
+  rules:
+  - host: ${DOMAIN}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: ${SERVICE_NAME}
+            port:
+              number: ${SERVICE_PORT}
+EOF
+
+# Namespace erstellen (falls nicht vorhanden)
+kubectl create namespace ${NAMESPACE} \
+  -dry-run=client -o yaml | kubectl apply -f -
+
+# Ingress anwenden
+kubectl apply -f ${SERVICE_NAME}-ingress.yaml
+
+echo "[SUCCESS] SSL Ingress created for ${SERVICE_NAME}"
+echo "[INFO] Monitor certificate: \
+kubectl get certificate -n ${NAMESPACE} -w"
+echo "[URL] Access URL: https://${DOMAIN}"
+\end{verbatim}
+
+\paragraph{Batch SSL-Status Monitoring}
+
+Script zur Überwachung aller SSL-Zertifikate im Cluster:
+
+\begin{verbatim}
+#!/bin/bash
+# File: monitor-all-certificates.sh
+
+echo "[INFO] SSL Certificate Status Overview"
+echo "=================================="
+
+# Alle Zertifikate im Cluster auflisten
+kubectl get certificates -A -o custom-columns=\
+"NAMESPACE:.metadata.namespace,\
+NAME:.metadata.name,\
+READY:.status.conditions[0].status,\
+SECRET:.spec.secretName,\
+DOMAIN:.spec.dnsNames[0]"
+
+echo ""
+echo "[TIME] Certificate Expiry Information"
+echo "================================"
+
+# Ablaufdaten für alle Zertifikate
+for ns in $(kubectl get certificates -A \
+  -o jsonpath='{.items[*].metadata.namespace}' | \
+  tr ' ' '\n' | sort -u); do
+    for cert in $(kubectl get certificates -n $ns \
+      -o jsonpath='{.items[*].metadata.name}'); do
+        secret=$(kubectl get certificate $cert -n $ns \
+          -o jsonpath='{.spec.secretName}')
+        if kubectl get secret $secret -n $ns &>/dev/null; then
+            echo "[CERT] $ns/$cert:"
+            kubectl get secret $secret -n $ns \
+              -o jsonpath='{.data.tls\.crt}' | \
+              base64 -d | openssl x509 -noout -dates 2>/dev/null || \
+              echo "  [ERROR] Certificate unreadable"
+        else
+            echo "[CERT] $ns/$cert: [ERROR] Secret not found"
+        fi
+        echo ""
+    done
+done
+\end{verbatim}
+
+\subsubsection{Best Practices und Troubleshooting}
+
+\paragraph{SSL-Service Standards}
+
+\begin{itemize}
+  \item \textbf{Naming Convention:} \texttt{<service-name>-ingress} für Ingress-Ressourcen
+  \item \textbf{Secret Naming:} \texttt{<service-name>-letsencrypt-cert} für Zertifikat-Secrets
+  \item \textbf{Namespace Isolation:} Logische Gruppierung verwandter Services
+  \item \textbf{Security Headers:} Standardisierte Sicherheits-Header für alle Services
+  \item \textbf{HTTPS Enforcement:} Automatische HTTP-zu-HTTPS-Weiterleitung
+\end{itemize}
+
+\paragraph{Häufige Probleme und Lösungen}
+
+\textbf{Zertifikat-Ausstellung schlägt fehl:}
+
+\begin{verbatim}
+# DNS-Auflösung prüfen
+nslookup <service-domain>
+
+# ACME Challenge Status
+kubectl describe certificate <cert-name> -n <namespace>
+kubectl get challenges -A
+
+# HTTP-Erreichbarkeit testen
+curl -I http://<service-domain>/\
+.well-known/acme-challenge/test
+\end{verbatim}
+
+\textbf{Service nicht über HTTPS erreichbar:}
+
+\begin{verbatim}
+# Ingress-Status überprüfen
+kubectl describe ingress <service-name>-ingress \
+  -n <namespace>
+
+# Service-Endpoint validieren
+kubectl get endpoints <service-name> -n <namespace>
+
+# Pod-Status überprüfen
+kubectl get pods -n <namespace> -l app=<service-name>
+\end{verbatim}
+
+\paragraph{Wartung und Monitoring}
+
+\begin{verbatim}
+# Regelmäßige Zertifikat-Überprüfung
+./monitor-all-certificates.sh
+
+# cert-manager Health Check
+kubectl get pods -n cert-manager
+kubectl logs -n cert-manager \
+  deployment/cert-manager -tail=50
+
+# Traefik Ingress Controller Status
+kubectl get pods -n kube-system \
+  -l app.kubernetes.io/name=traefik
+\end{verbatim}
+
+Dieses Framework ermöglicht eine standardisierte, skalierbare SSL-Implementierung für beliebige Services im Homelab-Cluster mit minimaler Konfiguration pro neuem Service und automatisierter Zertifikat-Verwaltung.
+
+\subsection{K3s Master Node Ressourcen-Management}
+
+Dieser Abschnitt dokumentiert die Implementierung von systemd-basierten Ressourcenbeschränkungen für den K3s Master Node zur Vermeidung von Ressourcen-Überbelegung und zur Gewährleistung stabiler Cluster-Performance.
+
+\subsubsection{Problemstellung und Zielsetzung}
+
+\paragraph{Ressourcen-Herausforderungen im Homelab}
+
+K3s Master Nodes in ressourcenbeschränkten Homelab-Umgebungen erfordern präzise Ressourcenkontrolle:
+
+\begin{itemize}
+  \item \textbf{Memory Pressure} - Unkontrollierte Speichernutzung kann System-Instabilität verursachen
+  \item \textbf{CPU Überlastung} - Übermäßige CPU-Nutzung beeinträchtigt Control Plane Performance
+  \item \textbf{System Responsiveness} - Host-System muss für administrative Aufgaben verfügbar bleiben
+  \item \textbf{Resource Contention} - Andere Services benötigen garantierte Ressourcen-Reservierung
+\end{itemize}
+
+\paragraph{Zielsetzung der Ressourcenbeschränkung}
+
+\begin{itemize}
+  \item Stabile K3s Control Plane Operation bei begrenzten Ressourcen
+  \item Vermeidung von OOM-Killer-Ereignissen durch Memory-Limits
+  \item CPU-Throttling zur Erhaltung der System-Responsiveness
+  \item Proaktive Ressourcen-Überwachung und -Steuerung
+\end{itemize}
+
+\subsubsection{systemd Service Unit Konfiguration}
+
+\paragraph{Erweiterte K3s Service Unit}
+
+Die systemd Service Unit wird um Ressourcenbeschränkungen für 8GB RAM Server erweitert:
+
+\begin{verbatim}
+# File: /etc/systemd/system/k3s.service
+
+[Unit]
+Description=Lightweight Kubernetes
+Documentation=https://k3s.io
+Wants=network-online.target
+After=network-online.target
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+Type=notify
+EnvironmentFile=-/etc/default/%N
+EnvironmentFile=-/etc/sysconfig/%N
+EnvironmentFile=-/etc/systemd/system/k3s.service.env
+KillMode=process
+Delegate=yes
+User=root
+
+# Standard Limits für Container-Performance
+LimitNOFILE=1048576
+LimitNPROC=infinity
+LimitCORE=infinity
+TasksMax=infinity
+
+# Ressourcenbeschränkungen für 8GB RAM Server
+MemoryMax=6963M       # Maximaler RAM-Verbrauch (~85% von 8GB)
+MemoryHigh=6553M      # High-Water-Mark für Memory Pressure (~80% von 8GB)
+CPUQuota=85%          # CPU-Limitierung auf 85% aller verfügbaren Cores
+
+TimeoutStartSec=0
+Restart=always
+RestartSec=5s
+
+ExecStartPre=/bin/sh -xc \
+  '! /usr/bin/systemctl is-enabled --quiet nm-cloud-setup.service 2>/dev/null'
+ExecStartPre=-/sbin/modprobe br_netfilter
+ExecStartPre=-/sbin/modprobe overlay
+
+ExecStart=/usr/local/bin/k3s \
+    server \
+    '--node-name=master' \
+    '--write-kubeconfig-mode=644' \
+    '--node-ip=<VPN_IP>' \
+    '--advertise-address=<VPN_IP>' \
+    '--node-external-ip=<PUBLIC_IP>' \
+    '--flannel-iface=tailscale0' \
+    '--tls-san=<VPN_IP>' \
+    '--tls-san=<PUBLIC_IP>' \
+    '--tls-san=localhost' \
+    '--tls-san=127.0.0.1'
+\end{verbatim}
+
+\subsubsection{Ressourcen-Parameter Erklärung}
+
+\paragraph{Memory Management Parameter}
+
+\textbf{MemoryMax=6963M (Harte Memory-Grenze):}
+\begin{itemize}
+  \item Absolute Obergrenze für RAM-Verbrauch des K3s Service
+  \item Berechnung: 8GB × 0.85 = 6.8GB ≈ 6963MB
+  \item Verhindert OOM-Killer-Ereignisse auf System-Ebene
+  \item Reserviert ~1.2GB für Host-System und andere Services
+\end{itemize}
+
+\textbf{MemoryHigh=6553M (Soft Memory-Limit):}
+\begin{itemize}
+  \item Auslöser für proaktive Memory-Bereinigung
+  \item Berechnung: 8GB × 0.80 = 6.4GB ≈ 6553MB
+  \item Aktiviert Kernel Memory Reclaim vor Erreichen der harten Grenze
+  \item Reduziert Memory Pressure durch präventive Garbage Collection
+\end{itemize}
+
+\paragraph{CPU Management Parameter}
+
+\textbf{CPUQuota=85%:}
+\begin{itemize}
+  \item Beschränkung auf 85% aller verfügbaren CPU-Cores
+  \item Beispiel: 4-Core System → 3.4 Cores für K3s verfügbar
+  \item Gewährleistet CPU-Reservierung für Host-System-Aufgaben
+  \item Verhindert vollständige CPU-Sättigung durch Kubernetes Workloads
+\end{itemize}
+
+\subsubsection{Implementierung und Aktivierung}
+
+\paragraph{Service Unit Deployment}
+
+\begin{verbatim}
+# Bestehenden K3s Service stoppen
+sudo systemctl stop k3s
+
+# Service Unit aktualisieren
+sudo cp k3s.service /etc/systemd/system/k3s.service
+
+# systemd Daemon neu laden
+sudo systemctl daemon-reload
+
+# Service Unit validieren
+sudo systemctl cat k3s.service
+
+# K3s Service mit neuen Limits starten
+sudo systemctl start k3s
+sudo systemctl enable k3s
+\end{verbatim}
+
+\paragraph{Ressourcen-Limit Verifikation}
+
+\begin{verbatim}
+# Service Status mit Ressourcen-Information
+sudo systemctl status k3s
+
+# Detaillierte Ressourcen-Limits anzeigen
+sudo systemctl show k3s | grep -E "(Memory|CPU)"
+
+# Live-Ressourcen-Verbrauch überwachen
+sudo systemctl show k3s | grep -E "(MemoryCurrent|CPUUsage)"
+\end{verbatim}
+
+\subsubsection{Monitoring und Überwachung}
+
+\paragraph{Ressourcen-Verbrauch Monitoring}
+
+\begin{verbatim}
+# Memory-Verbrauch des K3s Service
+sudo systemd-cgtop -p -1 | grep k3s
+
+# Detailliertes cgroup Memory-Status
+cat /sys/fs/cgroup/system.slice/k3s.service/memory.current
+cat /sys/fs/cgroup/system.slice/k3s.service/memory.max
+cat /sys/fs/cgroup/system.slice/k3s.service/memory.high
+
+# CPU-Verbrauch und Throttling
+cat /sys/fs/cgroup/system.slice/k3s.service/cpu.stat
+\end{verbatim}
+
+\paragraph{Automatisiertes Monitoring Script}
+
+\begin{verbatim}
+#!/bin/bash
+# File: monitor-k3s-resources.sh
+
+echo "[INFO] K3s Resource Monitoring Report"
+echo "=================================="
+
+# Service Status
+echo "[STATUS] K3s Service Status:"
+systemctl is-active k3s
+echo ""
+
+# Memory Usage
+MEMORY_CURRENT=$(cat /sys/fs/cgroup/system.slice/k3s.service/memory.current 2>/dev/null)
+MEMORY_MAX=$(cat /sys/fs/cgroup/system.slice/k3s.service/memory.max 2>/dev/null)
+MEMORY_HIGH=$(cat /sys/fs/cgroup/system.slice/k3s.service/memory.high 2>/dev/null)
+
+if [ -n "$MEMORY_CURRENT" ]; then
+    MEMORY_CURRENT_MB=$((MEMORY_CURRENT / 1024 / 1024))
+    MEMORY_MAX_MB=$((MEMORY_MAX / 1024 / 1024))
+    MEMORY_HIGH_MB=$((MEMORY_HIGH / 1024 / 1024))
+    USAGE_PERCENT=$(($MEMORY_CURRENT * 100 / $MEMORY_MAX))
+    
+    echo "[MEMORY] Current Usage: ${MEMORY_CURRENT_MB}MB / ${MEMORY_MAX_MB}MB (${USAGE_PERCENT}%)"
+    echo "[MEMORY] High Water Mark: ${MEMORY_HIGH_MB}MB"
+    
+    if [ $USAGE_PERCENT -gt 90 ]; then
+        echo "[WARNING] Memory usage above 90%!"
+    fi
+else
+    echo "[ERROR] Cannot read memory statistics"
+fi
+
+echo ""
+
+# CPU Statistics
+CPU_STAT_FILE="/sys/fs/cgroup/system.slice/k3s.service/cpu.stat"
+if [ -f "$CPU_STAT_FILE" ]; then
+    echo "[CPU] CPU Statistics:"
+    grep -E "(usage_usec|throttled)" "$CPU_STAT_FILE"
+    
+    THROTTLED=$(grep "throttled_usec" "$CPU_STAT_FILE" | awk '{print $2}')
+    if [ "$THROTTLED" -gt 0 ]; then
+        echo "[WARNING] CPU throttling detected: ${THROTTLED}μs"
+    fi
+else
+    echo "[ERROR] Cannot read CPU statistics"
+fi
+
+echo ""
+
+# System Load
+echo "[SYSTEM] Current Load Average:"
+uptime | awk -F'load average:' '{print $2}'
+
+# Available Memory
+echo "[SYSTEM] Available System Memory:"
+free -h | grep -E "(Mem|Swap)"
+\end{verbatim}
+
+\subsubsection{Tuning und Anpassungen}
+
+\paragraph{RAM-basierte Konfigurationsempfehlungen}
+
+\textbf{Für 4GB RAM Server:}
+\begin{verbatim}
+MemoryMax=3276M      # ~80% von 4GB
+MemoryHigh=2949M     # ~72% von 4GB
+CPUQuota=80%         # Konservativer für begrenzte Ressourcen
+\end{verbatim}
+
+\textbf{Für 16GB RAM Server:}
+\begin{verbatim}
+MemoryMax=13926M     # ~85% von 16GB
+MemoryHigh=13107M    # ~80% von 16GB
+CPUQuota=90%         # Weniger restriktiv bei mehr Ressourcen
+\end{verbatim}
+
+\paragraph{Performance-Optimierung Parameter}
+
+\begin{verbatim}
+# Zusätzliche systemd Parameter für Performance
+IOWeight=500              # I/O Priorität reduzieren
+Nice=5                   # Niedrigere CPU-Priorität
+OOMScoreAdjust=100       # OOM-Killer Präferenz erhöhen
+
+# cgroup v2 spezifische Optimierungen
+MemorySwapMax=2G         # Swap-Nutzung begrenzen
+IODeviceLatencyTargetSec=100ms  # I/O Latenz-Ziel
+\end{verbatim}
+
+\subsubsection{Troubleshooting und Wartung}
+
+\paragraph{Häufige Probleme und Lösungen}
+
+\textbf{Memory Pressure Events:}
+\begin{verbatim}
+# Memory Events überprüfen
+cat /sys/fs/cgroup/system.slice/k3s.service/memory.events
+
+# Kernel Memory Reclaim forcieren
+echo 1 > /sys/fs/cgroup/system.slice/k3s.service/memory.reclaim
+
+# K3s Garbage Collection manuell auslösen
+kubectl get pods -A | grep Evicted | \
+  awk '{print $1, $2}' | xargs -n2 kubectl delete pod -n
+\end{verbatim}
+
+\textbf{CPU Throttling Issues:}
+\begin{verbatim}
+# CPU Throttling Statistics
+cat /sys/fs/cgroup/system.slice/k3s.service/cpu.stat | \
+  grep throttled
+
+# Temporäre CPU-Limit Erhöhung
+sudo systemctl set-property k3s.service CPUQuota=95%
+
+# Permanente Anpassung
+sudo systemctl edit k3s.service
+# [Service]
+# CPUQuota=95%
+\end{verbatim}
+
+\paragraph{Resource Limit Anpassung im laufenden Betrieb}
+
+\begin{verbatim}
+# Memory-Limit temporär erhöhen
+sudo systemctl set-property k3s.service MemoryMax=8G
+
+# CPU-Quota anpassen
+sudo systemctl set-property k3s.service CPUQuota=90%
+
+# Änderungen dauerhaft machen
+sudo systemctl edit k3s.service
+
+# Service neu starten für permanente Änderungen
+sudo systemctl daemon-reload
+sudo systemctl restart k3s
+\end{verbatim}
+
+Diese Ressourcenbeschränkungen gewährleisten einen stabilen K3s Master Node Betrieb in ressourcenbeschränkten Homelab-Umgebungen durch proaktive Ressourcenkontrolle und systemd-basierte Limits.
