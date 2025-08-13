@@ -105,14 +105,15 @@ Die Server-Installation erfolgt mit erweiterten Netzwerk-Parametern:
 
 \begin{verbatim}
 curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="\
-  --node-ip=<server_vpn_ip> \
-  --advertise-address=<server_vpn_ip> \
-  --node-external-ip=<server_public_ip> \
-  --flannel-iface=<vpn_interface_name> \
-  --tls-san=<server_vpn_ip> \
-  --tls-san=<server_public_ip> \
-  --tls-san=<server_dns_name>" \
-  sh -
+--node-ip=<VPN_IP> \
+--advertise-address=<VPN_IP> \
+--node-external-ip=<PUBLIC_IP> \
+--flannel-iface=<VPN_INTERFACE> \
+--tls-san=<VPN_IP> \
+--tls-san=<PUBLIC_IP> \
+--tls-san=localhost \
+--tls-san=127.0.0.1" \
+sh -
 \end{verbatim}
 
 \textbf{Parameter-Beschreibung:}
