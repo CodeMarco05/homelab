@@ -137,14 +137,12 @@ sudo cat /var/lib/rancher/k3s/server/node-token
 Die Worker-Nodes werden mit entsprechender VPN-Konfiguration hinzugefügt:
 
 \begin{verbatim}
-export K3S_URL="https://<server_vpn_ip>:6443"
-export K3S_TOKEN="<server_join_token>"
-
-curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="\
-  --node-ip=<worker_vpn_ip> \
-  --node-external-ip=<worker_public_ip> \
-  --flannel-iface=<vpn_interface_name>" \
-  sh -
+curl -sfL https://get.k3s.io | K3S_URL=https://<MASTER_VPN_IP>:6443 \
+K3S_TOKEN=<K3S_TOKEN> \
+INSTALL_K3S_EXEC="\
+--node-ip=<WORKER_VPN_IP> \
+--flannel-iface=<VPN_INTERFACE>" \
+sh -
 \end{verbatim}
 
 \textbf{Parameter-Beschreibung:}

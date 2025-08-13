@@ -1,0 +1,846 @@
+\subsection{13. August 2025 - K3s Node Taints und Scheduling}
+
+Dieser Abschnitt dokumentiert die Implementierung von Node Taints, Tolerations und Node Affinity zur präzisen Kontrolle der Pod-Verteilung im K3s Cluster. Diese Mechanismen ermöglichen die strategische Workload-Platzierung auf spezifischen Nodes basierend auf deren Rollen und Eigenschaften.
+
+\subsubsection{Master Node Taint-Konfiguration}
+
+\paragraph{Standard Master Taint anwenden}
+
+Zur Isolation der Control Plane wird der standardmäßige Kubernetes Master Taint angewendet:
+
+\begin{verbatim}
+kubectl taint nodes master node-role.kubernetes.io/control-plane:NoSchedule
+\end{verbatim}
+
+\paragraph{Taint-Verifikation}
+
+Die erfolgreiche Anwendung des Taints wird durch folgende Befehle validiert:
+
+\begin{verbatim}
+kubectl describe node master | grep -i taint
+
+# Erwartete Ausgabe:
+# Taints: node-role.kubernetes.io/control-plane:NoSchedule
+\end{verbatim}
+
+\paragraph{Pod-Verteilung überprüfen}
+
+Die aktuelle Pod-Distribution kann durch folgenden Befehl eingesehen werden:
+
+\begin{verbatim}
+kubectl get pods -A -o wide
+\end{verbatim}
+
+\textbf{Erwartete Ergebnisse:}
+\begin{itemize}
+  \item System-Pods (kube-system) verbleiben auf dem Master (besitzen entsprechende Tolerations)
+  \item Neue Applikations-Pods werden ausschließlich auf Worker Nodes platziert
+\end{itemize}
+
+\subsubsection{Service-Deployment Strategien}
+
+\paragraph{Standard Deployment (respektiert Taints)}
+
+Ein grundlegendes Deployment ohne spezielle Tolerations wird automatisch von getainteten Nodes ausgeschlossen:
+
+\begin{verbatim}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-app
+  namespace: default
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: web-app
+  template:
+    metadata:
+      labels:
+        app: web-app
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:alpine
+        ports:
+        - containerPort: 80
+\end{verbatim}
+
+\textbf{Resultat:} Scheduling erfolgt ausschließlich auf Worker Nodes ohne Master Tolerations.
+
+\paragraph{Service mit universeller Node-Kompatibilität}
+
+Für Services, die auf allen verfügbaren Nodes ausgeführt werden sollen:
+
+\begin{verbatim}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: monitoring-agent
+  namespace: default
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: monitoring-agent
+  template:
+    metadata:
+      labels:
+        app: monitoring-agent
+    spec:
+      tolerations:
+      - key: node-role.kubernetes.io/control-plane
+        operator: Exists
+        effect: NoSchedule
+      containers:
+      - name: agent
+        image: busybox
+        command: ['sh', '-c', 'while true; do echo "monitoring..."; sleep 30; done']
+\end{verbatim}
+
+\textbf{Resultat:} Scheduling auf sowohl Master- als auch Worker-Nodes möglich.
+
+\subsubsection{Master-exklusive Deployments}
+
+\paragraph{Erzwungenes Master-Scheduling mit nodeSelector}
+
+Für Services, die ausschließlich auf dem Master Node ausgeführt werden sollen:
+
+\begin{verbatim}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: master-only-service
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: master-only-service
+  template:
+    metadata:
+      labels:
+        app: master-only-service
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: master
+      tolerations:
+      - key: node-role.kubernetes.io/control-plane
+        operator: Exists
+        effect: NoSchedule
+      containers:
+      - name: redis
+        image: redis:alpine
+        ports:
+        - containerPort: 6379
+\end{verbatim}
+
+\paragraph{Alternative Implementierung mit Node Affinity}
+
+Eine flexiblere Implementierung unter Verwendung von Node Affinity:
+
+\begin{verbatim}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: master-required-service
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: master-required-service
+  template:
+    metadata:
+      labels:
+        app: master-required-service
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - master
+      tolerations:
+      - key: node-role.kubernetes.io/control-plane
+        operator: Exists
+        effect: NoSchedule
+      containers:
+      - name: database
+        image: postgres:alpine
+        env:
+        - name: POSTGRES_PASSWORD
+          value: "password123"
+\end{verbatim}
+
+\textbf{Vorteil:} Node Affinity bietet erhöhte Flexibilität für Multi-Master-Setups.
+
+\subsubsection{Custom Taint-Management}
+
+\paragraph{Benutzerdefinierte Taints erstellen}
+
+Für spezielle Workload-Anforderungen können benutzerdefinierte Taints erstellt werden:
+
+\begin{verbatim}
+# Dedizierter Database-Node
+kubectl taint nodes kennedy dedicated=database:NoSchedule
+
+# Memory-intensive Workloads
+kubectl taint nodes kennedy workload-type=memory-intensive:NoSchedule
+\end{verbatim}
+
+\paragraph{Custom Taint-Verifikation}
+
+\begin{verbatim}
+kubectl describe node kennedy | grep -i taint
+
+# Erwartete Ausgabe:
+# Taints: dedicated=database:NoSchedule
+#         workload-type=memory-intensive:NoSchedule
+\end{verbatim}
+
+\paragraph{Exakte Taint-Toleranz}
+
+Deployment mit präziser Taint-Übereinstimmung:
+
+\begin{verbatim}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: database-service
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: database-service
+  template:
+    metadata:
+      labels:
+        app: database-service
+    spec:
+      tolerations:
+      - key: dedicated
+        operator: Equal
+        value: "database"
+        effect: NoSchedule
+      - key: workload-type
+        operator: Equal
+        value: "memory-intensive"
+        effect: NoSchedule
+      containers:
+      - name: mysql
+        image: mysql:8.0
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          value: "rootpassword"
+        resources:
+          requests:
+            memory: "2Gi"
+          limits:
+            memory: "4Gi"
+\end{verbatim}
+
+\paragraph{Flexible Taint-Toleranz}
+
+Deployment mit flexibler Taint-Übereinstimmung:
+
+\begin{verbatim}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flexible-database
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: flexible-database
+  template:
+    metadata:
+      labels:
+        app: flexible-database
+    spec:
+      tolerations:
+      - key: dedicated
+        operator: Exists
+        effect: NoSchedule
+      - key: workload-type
+        operator: Exists
+        effect: NoSchedule
+      containers:
+      - name: mongodb
+        image: mongo:latest
+\end{verbatim}
+
+\paragraph{Präferierte Node-Selektion (Soft Scheduling)}
+
+\begin{verbatim}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: preferred-database
+  namespace: default
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: preferred-database
+  template:
+    metadata:
+      labels:
+        app: preferred-database
+    spec:
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            preference:
+              matchExpressions:
+              - key: dedicated
+                operator: In
+                values:
+                - database
+          - weight: 80
+            preference:
+              matchExpressions:
+              - key: workload-type
+                operator: In
+                values:
+                - memory-intensive
+      tolerations:
+      - key: dedicated
+        operator: Exists
+        effect: NoSchedule
+      - key: workload-type
+        operator: Exists
+        effect: NoSchedule
+      containers:
+      - name: app
+        image: nginx:alpine
+\end{verbatim}
+
+\textbf{Resultat:} Bevorzugtes Scheduling auf getainteten Nodes mit Fallback-Option auf anderen Nodes.
+
+\subsubsection{Administrative Kommandos}
+
+\paragraph{Node-Information abrufen}
+
+\begin{verbatim}
+# Alle Nodes mit Labels und Taints
+kubectl get nodes -o wide
+
+# Detaillierte Node-Information
+kubectl describe node master
+kubectl describe node kennedy
+
+# Pod-Scheduling-Übersicht
+kubectl get pods -A -o wide
+\end{verbatim}
+
+\paragraph{Taint-Management}
+
+\begin{verbatim}
+# Taint hinzufügen
+kubectl taint nodes <node-name> <key>=<value>:<effect>
+
+# Taint entfernen (Minus-Zeichen am Ende beachten)
+kubectl taint nodes <node-name> <key>:<effect>-
+
+# Beispiele:
+kubectl taint nodes kennedy dedicated=database:NoSchedule
+kubectl taint nodes kennedy dedicated:NoSchedule-
+\end{verbatim}
+
+\paragraph{Scheduling-Tests}
+
+\begin{verbatim}
+# Deployment anwenden
+kubectl apply -f deployment.yaml
+
+# Scheduling-Resultat überprüfen
+kubectl get pods -o wide
+
+# Pod-Tolerations einsehen
+kubectl describe pod <pod-name>
+\end{verbatim}
+
+\subsubsection{Referenz-Übersicht}
+
+\paragraph{Taint Effects}
+
+\begin{itemize}
+  \item \textbf{NoSchedule} -- Kein Scheduling neuer Pods, bestehende Pods verbleiben
+  \item \textbf{PreferNoSchedule} -- Scheduling vermeiden, aber bei Bedarf erlauben
+  \item \textbf{NoExecute} -- Kein Scheduling neuer Pods, bestehende Pods werden evicted
+\end{itemize}
+
+\paragraph{Toleration Operators}
+
+\begin{itemize}
+  \item \textbf{Equal} -- Exakte key=value Übereinstimmung erforderlich
+  \item \textbf{Exists} -- Key-Übereinstimmung unabhängig vom Value
+\end{itemize}
+
+\paragraph{Node-Selektions-Methoden}
+
+\begin{itemize}
+  \item \textbf{nodeSelector} -- Einfaches key-value Matching
+  \item \textbf{nodeAffinity (required)} -- Verbindliche Übereinstimmung, flexibler als nodeSelector
+  \item \textbf{nodeAffinity (preferred)} -- Präferierte Übereinstimmung mit Fallback-Option
+\end{itemize}
+
+\subsubsection{Implementierungs-Workflow}
+
+Die praktische Implementierung erfolgt in folgenden Schritten:
+
+\begin{verbatim}
+# 1. Master Taint anwenden
+kubectl taint nodes master node-role.kubernetes.io/control-plane:NoSchedule
+
+# 2. Custom Taints konfigurieren
+kubectl taint nodes kennedy dedicated=database:NoSchedule
+
+# 3. Applikationen mit entsprechenden Tolerations deployen
+kubectl apply -f web-app.yaml           # Worker Nodes
+kubectl apply -f master-service.yaml    # Master Node exklusiv
+kubectl apply -f database-service.yaml  # Kennedy Node exklusiv
+
+# 4. Pod-Platzierung verifizieren
+kubectl get pods -A -o wide
+\end{verbatim}
+
+Diese Konfiguration ermöglicht eine präzise Kontrolle der Workload-Verteilung unter Beachtung der Kubernetes Best Practices und gewährleistet optimale Ressourcennutzung im Homelab-Cluster.
+
+\subsection{K3s Monitoring Stack mit SSL-Konfiguration}
+
+Dieser Abschnitt dokumentiert die vollständige Implementierung eines Monitoring-Stacks bestehend aus Prometheus, Grafana und AlertManager mit automatischen SSL-Zertifikaten von Let's Encrypt für K3s-Cluster.
+
+\subsubsection{Systemvoraussetzungen und Architektur-Übersicht}
+
+\paragraph{Technische Voraussetzungen}
+
+\begin{itemize}
+  \item Funktionsfähiger K3s Cluster mit Master- und Worker-Nodes
+  \item Domain mit DNS-Konfiguration auf Server-IP (DNS-only, nicht proxied)
+  \item Firewall-Freigaben für Ports 80, 443 und 6443
+  \item Helm Package Manager Installation
+\end{itemize}
+
+\paragraph{Monitoring-Stack Komponenten}
+
+Das implementierte System umfasst folgende Kernkomponenten:
+
+\begin{itemize}
+  \item \textbf{Prometheus} -- Metriken-Sammlung und -Speicherung mit 15-Tage-Retention
+  \item \textbf{Grafana} -- Dashboard-Visualisierung mit SSL-optimierter Konfiguration
+  \item \textbf{AlertManager} -- Benachrichtigungs- und Alerting-System
+  \item \textbf{Node Exporter} -- Hardware- und OS-Metriken-Erfassung
+  \item \textbf{cert-manager} -- Automatische SSL-Zertifikat-Verwaltung
+  \item \textbf{Let's Encrypt} -- Kostenlose SSL-Zertifikate mit 60-Tage-Auto-Renewal
+\end{itemize}
+
+\subsubsection{Helm und Repository-Konfiguration}
+
+\paragraph{Helm Installation und Verifikation}
+
+\begin{verbatim}
+# Helm Installation
+curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+
+# Installation verifizieren
+helm version
+\end{verbatim}
+
+\paragraph{Prometheus Community Repository}
+
+\begin{verbatim}
+# Repository hinzufügen
+helm repo add prometheus-community \
+  https://prometheus-community.github.io/helm-charts
+
+# Repository aktualisieren
+helm repo update
+
+# Verfügbare Charts verifizieren
+helm search repo prometheus-community/kube-prometheus-stack
+\end{verbatim}
+
+\paragraph{Monitoring Namespace erstellen}
+
+\begin{verbatim}
+# Dediziertes Namespace für Monitoring-Komponenten
+kubectl create namespace monitoring
+
+# Namespace verifizieren
+kubectl get namespaces
+\end{verbatim}
+
+\subsubsection{DNS-Konfiguration und SSL-Vorbereitung}
+
+\paragraph{DNS-Konfiguration}
+
+Die Domain-Konfiguration muss als \textbf{DNS-only} (nicht proxied) erfolgen:
+
+\begin{itemize}
+  \item \textbf{Domain:} \texttt{grafana.k8s.marco-brandt.com}
+  \item \textbf{Type:} A Record
+  \item \textbf{Content:} Server Public IP (z.B. \texttt{138.199.218.161})
+  \item \textbf{Proxy Status:} DNS only (graue Wolke in Cloudflare)
+\end{itemize}
+
+\paragraph{DNS-Verifikation}
+
+\begin{verbatim}
+nslookup grafana.k8s.marco-brandt.com
+# Sollte Server-IP zurückgeben, nicht Cloudflare-IPs
+\end{verbatim}
+
+\subsubsection{cert-manager Installation und Konfiguration}
+
+\paragraph{cert-manager Deployment}
+
+\begin{verbatim}
+# cert-manager Installation
+kubectl apply -f \
+  https://github.com/cert-manager/cert-manager/releases/download/v1.13.2/cert-manager.yaml
+
+# Pod-Bereitschaft überwachen
+kubectl wait --for=condition=ready pod -l app=cert-manager \
+  -n cert-manager --timeout=120s
+kubectl wait --for=condition=ready pod -l app=cainjector \
+  -n cert-manager --timeout=120s
+kubectl wait --for=condition=ready pod -l app=webhook \
+  -n cert-manager --timeout=120s
+
+# Installation verifizieren
+kubectl get pods -n cert-manager
+\end{verbatim}
+
+\paragraph{Let's Encrypt ClusterIssuer Konfiguration}
+
+\begin{verbatim}
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+spec:
+  acme:
+    email: marco@marco-brandt.com  # Anpassen an eigene E-Mail
+    server: https://acme-v02.api.letsencrypt.org/directory
+    privateKeySecretRef:
+      name: letsencrypt-prod-private-key
+    solvers:
+    - http01:
+        ingress:
+          ingressClassName: traefik
+          podTemplate:
+            spec:
+              tolerations:
+              - key: node-role.kubernetes.io/control-plane
+                operator: Exists
+                effect: NoSchedule
+\end{verbatim}
+
+\subsubsection{Grafana Ingress mit SSL-Terminierung}
+
+\paragraph{SSL-optimierte Ingress-Konfiguration}
+
+\begin{verbatim}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: grafana-ingress
+  namespace: monitoring
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    traefik.ingress.kubernetes.io/redirect-to-https: "true"
+    traefik.ingress.kubernetes.io/custom-response-headers: |
+      X-Frame-Options: SAMEORIGIN
+      X-Content-Type-Options: nosniff
+      X-XSS-Protection: 1; mode=block
+      Referrer-Policy: strict-origin-when-cross-origin
+      Strict-Transport-Security: max-age=31536000; includeSubDomains
+spec:
+  ingressClassName: traefik
+  tls:
+  - hosts:
+    - grafana.k8s.marco-brandt.com
+    secretName: grafana-letsencrypt-cert
+  rules:
+  - host: grafana.k8s.marco-brandt.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: prometheus-grafana
+            port:
+              number: 80
+\end{verbatim}
+
+\subsubsection{Monitoring Stack Helm Values}
+
+\paragraph{Grafana SSL-optimierte Konfiguration}
+
+\begin{verbatim}
+grafana:
+  adminPassword: "admin123"
+  grafana.ini:
+    server:
+      domain: grafana.k8s.marco-brandt.com
+      root_url: https://grafana.k8s.marco-brandt.com
+      serve_from_sub_path: false
+      protocol: http
+      http_port: 3000
+      cookie_secure: true
+    security:
+      allow_embedding: false
+      strict_transport_security: true
+      strict_transport_security_max_age_seconds: 31536000
+      strict_transport_security_preload: true
+      strict_transport_security_subdomains: true
+      content_type_protection: true
+      x_content_type_options: nosniff
+      x_xss_protection: true
+  service:
+    type: ClusterIP
+    port: 80
+    targetPort: 3000
+  resources:
+    requests:
+      memory: 256Mi
+      cpu: 250m
+    limits:
+      memory: 512Mi
+      cpu: 500m
+  persistence:
+    enabled: true
+    size: 10Gi
+  tolerations:
+  - key: node-role.kubernetes.io/control-plane
+    operator: Exists
+    effect: NoSchedule
+\end{verbatim}
+
+\paragraph{Prometheus Persistenz und Ressourcen-Konfiguration}
+
+\begin{verbatim}
+prometheus:
+  prometheusSpec:
+    retention: 15d
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 20Gi
+    resources:
+      requests:
+        memory: 512Mi
+        cpu: 500m
+      limits:
+        memory: 2Gi
+        cpu: 1000m
+    tolerations:
+    - key: node-role.kubernetes.io/control-plane
+      operator: Exists
+      effect: NoSchedule
+\end{verbatim}
+
+\paragraph{AlertManager Persistenz-Konfiguration}
+
+\begin{verbatim}
+alertmanager:
+  alertmanagerSpec:
+    storage:
+      volumeClaimTemplate:
+        spec:
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 5Gi
+    resources:
+      requests:
+        memory: 128Mi
+        cpu: 100m
+      limits:
+        memory: 256Mi
+        cpu: 200m
+    tolerations:
+    - key: node-role.kubernetes.io/control-plane
+      operator: Exists
+      effect: NoSchedule
+\end{verbatim}
+
+\subsubsection{Deployment und Zertifikat-Monitoring}
+
+\paragraph{Monitoring Stack Deployment}
+
+\begin{verbatim}
+# ClusterIssuer anwenden
+kubectl apply -f letsencrypt-issuer.yaml
+
+# Monitoring Stack installieren
+helm install prometheus prometheus-community/kube-prometheus-stack \
+  --namespace monitoring \
+  --values monitoring-values.yaml \
+  --wait
+
+# Grafana Ingress mit SSL erstellen
+kubectl apply -f grafana-ingress.yaml
+\end{verbatim}
+
+\paragraph{SSL-Zertifikat Status-Überwachung}
+
+\begin{verbatim}
+# Zertifikat-Status live überwachen
+kubectl get certificate -n monitoring -w
+
+# Detaillierte Zertifikat-Information
+kubectl describe certificate grafana-letsencrypt-cert -n monitoring
+
+# ACME Challenge Status überprüfen
+kubectl get challenges -A
+
+# cert-manager Logs analysieren
+kubectl logs -n cert-manager deployment/cert-manager --tail=20
+\end{verbatim}
+
+\paragraph{Zertifikat-Gültigkeit Validierung}
+
+\begin{verbatim}
+# HTTPS-Verbindung testen
+curl -I https://grafana.k8s.marco-brandt.com
+
+# Zertifikat-Ablaufdatum überprüfen
+kubectl get secret grafana-letsencrypt-cert -n monitoring \
+  -o jsonpath='{.data.tls\.crt}' | \
+  base64 -d | \
+  openssl x509 -noout -dates
+\end{verbatim}
+
+\subsubsection{Service-Zugriff und Verifikation}
+
+\paragraph{Grafana Web-Interface}
+
+Nach erfolgreicher Zertifikat-Ausstellung:
+
+\begin{itemize}
+  \item \textbf{URL:} \texttt{https://grafana.k8s.marco-brandt.com}
+  \item \textbf{Benutzername:} \texttt{admin}
+  \item \textbf{Passwort:} \texttt{admin123}
+\end{itemize}
+
+\paragraph{Prometheus Web-Interface (Port-Forward)}
+
+\begin{verbatim}
+# Prometheus UI über Port-Forward zugänglich machen
+kubectl port-forward -n monitoring \
+  svc/prometheus-kube-prometheus-prometheus 9090:9090
+
+# Zugriff über: http://localhost:9090
+\end{verbatim}
+
+\paragraph{AlertManager Web-Interface (Port-Forward)}
+
+\begin{verbatim}
+# AlertManager UI über Port-Forward zugänglich machen
+kubectl port-forward -n monitoring \
+  svc/prometheus-kube-prometheus-alertmanager 9093:9093
+
+# Zugriff über: http://localhost:9093
+\end{verbatim}
+
+\subsubsection{Dashboard-Konfiguration und Metriken}
+
+\paragraph{Wichtige vorkonfigurierte Dashboards}
+
+Der Monitoring Stack umfasst folgende essenzielle Dashboards:
+
+\begin{itemize}
+  \item \textbf{Kubernetes / Compute Resources / Cluster} -- Cluster-Gesamt-Metriken
+  \item \textbf{Kubernetes / Compute Resources / Node (Pods)} -- Pro-Node Pod-Metriken
+  \item \textbf{Kubernetes / Compute Resources / Pod} -- Individuelle Pod-Metriken
+  \item \textbf{Node Exporter / Nodes} -- Detaillierte Hardware-Metriken
+  \item \textbf{Kubernetes / API Server} -- Kubernetes API Performance
+  \item \textbf{Prometheus / Overview} -- Prometheus interne Metriken
+\end{itemize}
+
+\paragraph{OpenLens Integration}
+
+Prometheus-Integration in OpenLens:
+
+\begin{verbatim}
+# OpenLens Einstellungen → Metrics
+# Prometheus Endpoint:
+http://prometheus-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090
+\end{verbatim}
+
+\subsubsection{Wartung und Troubleshooting}
+
+\paragraph{Automatische Zertifikat-Erneuerung}
+
+\begin{itemize}
+  \item \textbf{Intervall:} Automatische Erneuerung alle 60 Tage
+  \item \textbf{Wartung:} Keine manuelle Intervention erforderlich
+  \item \textbf{Monitoring:} Kontinuierliche Überwachung des Zertifikat-Status empfohlen
+\end{itemize}
+
+\paragraph{Monitoring Stack Updates}
+
+\begin{verbatim}
+# Helm Repository aktualisieren
+helm repo update
+
+# Monitoring Stack upgraden
+helm upgrade prometheus prometheus-community/kube-prometheus-stack \
+  --namespace monitoring \
+  --values monitoring-values.yaml
+\end{verbatim}
+
+\paragraph{Häufige Troubleshooting-Szenarien}
+
+\textbf{Zertifikat-Ausstellung fehlgeschlagen:}
+
+\begin{verbatim}
+# ACME Challenge Logs überprüfen
+kubectl describe challenges -A
+
+# Traefik Logs analysieren
+kubectl logs -n kube-system deployment/traefik --tail=20
+
+# DNS-Auflösung validieren
+nslookup grafana.k8s.marco-brandt.com
+\end{verbatim}
+
+\textbf{Verbindungsprobleme:}
+
+\begin{verbatim}
+# Firewall-Status überprüfen
+sudo ufw status
+
+# Erforderliche Ports freigeben
+sudo ufw allow 80
+sudo ufw allow 443
+
+# Traefik Service-Status
+kubectl get pods -n kube-system | grep traefik
+\end{verbatim}
+
+\paragraph{Backup und Persistenz}
+
+\begin{verbatim}
+# Grafana-Konfiguration Backup
+kubectl get configmaps -n monitoring | grep grafana
+
+# Prometheus Daten-Persistenz Verifikation
+kubectl get pvc -n monitoring
+\end{verbatim}
+
+Die implementierte Monitoring-Lösung bietet eine professionelle, produktionsreife Observability-Infrastruktur mit automatisierter SSL-Verwaltung und gewährleistet langfristige Wartbarkeit des K3s Homelab-Clusters.
