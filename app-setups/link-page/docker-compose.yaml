@@ -1,0 +1,8 @@
+services:
+  link-page:
+    image: marco1205/link-page:latest
+    ports:
+      - "3300:3000"
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped
