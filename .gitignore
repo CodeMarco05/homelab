@@ -72,3 +72,13 @@ appendices/**/*.synctex.gz
 .env
 
 *.sqlite
+
+app-setups/glance/speedtest-tracker/config/.config/ookla/speedtest-cli.json
+
+app-setups/glance/speedtest-tracker/config/keys/cert.crt
+
+app-setups/glance/speedtest-tracker/config/keys/cert.key
+
+app-setups/glance/speedtest-tracker/config/nginx/dhparams.pem
+
+app-setups/glance/speedtest-tracker/config/nginx/ssl.conf
