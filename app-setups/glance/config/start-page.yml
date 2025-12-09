@@ -1,0 +1,89 @@
+- name: Startpage
+  width: wide
+  hide-desktop-navigation: true
+  center-vertically: true
+  columns:
+    - size: small
+      widgets:
+        - $include: stocks-widget.yml
+        - $include: github-repos-widget.yml 
+        - type: weather
+          location: Hamburg, Germany
+          units: metric # alternatively "imperial"
+          hour-format: 24h # alternatively "24h"
+          # Optionally hide the location from being displayed in the widget
+          # hide-location: true
+
+    - size: full
+      widgets:
+        - type: search
+          autofocus: true
+          search-engine: google
+        - type: monitor
+          cache: 1m
+          title: Services
+          sites:
+            - title: Proxmox
+              url: https://proxmox.lab.marco-brandt.com
+              icon: si:proxmox
+            - title: Nginx Proxy
+              url: https://proxy-manager.lab.marco-brandt.com
+              icon: si:nginxproxymanager
+            - title: Overleaf
+              url: http://overleaf.lab.marco-brandt.com
+              icon: si:overleaf
+            - title: Portainer
+              url: http://portainer.lab.marco-brandt.com
+              icon: si:portainer
+            - title: Speed Test
+              url: http://speedtest.lab.marco-brandt.com
+              icon: si:speedtest
+        - type: bookmarks
+          groups:
+            - title: General
+              links:
+                - title: Gmail
+                  url: https://mail.google.com/mail/u/0/
+                  icon: si:gmail
+                - title: Amazon
+                  url: https://www.amazon.com/
+                  icon: si:shopee
+                - title: YouTube
+                  url: https://www.youtube.com/
+                  icon: si:youtube
+                - title: Prime Video
+                  url: https://www.primevideo.com/
+                  icon: si:airplayvideo
+            - title: Programming
+              links:
+                - title: Github
+                  url: https://github.com/
+                  icon: si:github
+                - title: CloudFlare
+                  url: https://dash.cloudflare.com/
+                  icon: si:cloudflare
+                - title: Tailscale
+                  url: https://login.tailscale.com/admin/machines
+                  icon: si:tailscale
+                - title: Docker Hub 
+                  url: https://hub.docker.com/repositories/marco1205
+                  icon: si:docker
+        - type: extension
+          url: http://glance-github-graph:8080/graph/CodeMarco05
+          allow-potentially-dangerous-html: true
+          parameters:
+            background-color: "#1d2025"
+            primary-color: "#39d353"
+            svg-height: 150
+            show-months: true
+            show-weekdays: true
+            font-size: 9
+            transition-hue: false
+        - $include: proxmox-widget.yml
+        
+    - size: small
+      widgets:
+        - $include: speedtest-widget.yml
+        - $include: proxmox-widget-node.yml
+        - $include: portainer-widget.yml
+        - $include: tailscale-widget.yml
