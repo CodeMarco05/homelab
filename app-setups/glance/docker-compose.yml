@@ -37,7 +37,7 @@ services:
       - PUID=1000
       - PGID=1000
       - TZ=Europe/Berlin
-      - APP_KEY=base64:XLyBKSDiWK9coL32MH3Gql8louz2i7m0MyZ5L3xOUJ4=
+      - APP_KEY=base64:
       - DB_CONNECTION=sqlite
     volumes:
       - ./speedtest-tracker/config:/config
