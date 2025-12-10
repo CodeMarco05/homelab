@@ -1,0 +1,8 @@
+- type: markets
+  markets:
+    - symbol: EUNL.DE
+      name: MSCI World (Acc)
+    - symbol: URTH
+      name: MSCI World ETF
+    - symbol: GSPC
+      name: S&P 500
