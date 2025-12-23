@@ -9,7 +9,7 @@ void initTimeManager();
 // Fetch current unix time from API
 unsigned long fetchUnixTime();
 
-// Format unix timestamp to German date/time string
+// Format unix timestamp to date/time string
 String formatUnixTime(unsigned long unixTime);
 
 // Get current unix time (call this every second)

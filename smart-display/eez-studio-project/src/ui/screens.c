@@ -35,8 +35,134 @@ void create_screen_main() {
             // weather
             lv_obj_t *obj = lv_chart_create(parent_obj);
             objects.weather = obj;
-            lv_obj_set_pos(obj, 14, 176);
-            lv_obj_set_size(obj, 426, 288);
+            lv_obj_set_pos(obj, 14, 9);
+            lv_obj_set_size(obj, 193, 139);
+        }
+        {
+            // mon
+            lv_obj_t *obj = lv_label_create(parent_obj);
+            objects.mon = obj;
+            lv_obj_set_pos(obj, 14, 356);
+            lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+            lv_obj_set_style_text_font(obj, &ui_font_jersey_40, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_label_set_text(obj, "Mon");
+        }
+        {
+            // tue
+            lv_obj_t *obj = lv_label_create(parent_obj);
+            objects.tue = obj;
+            lv_obj_set_pos(obj, 96, 356);
+            lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+            lv_obj_set_style_text_font(obj, &ui_font_jersey_40, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_label_set_text(obj, "Tue");
+        }
+        {
+            // wed
+            lv_obj_t *obj = lv_label_create(parent_obj);
+            objects.wed = obj;
+            lv_obj_set_pos(obj, 167, 356);
+            lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+            lv_obj_set_style_text_font(obj, &ui_font_jersey_40, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_label_set_text(obj, "Wed");
+        }
+        {
+            // thu
+            lv_obj_t *obj = lv_label_create(parent_obj);
+            objects.thu = obj;
+            lv_obj_set_pos(obj, 245, 356);
+            lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+            lv_obj_set_style_text_font(obj, &ui_font_jersey_40, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_label_set_text(obj, "Thu");
+        }
+        {
+            // fri
+            lv_obj_t *obj = lv_label_create(parent_obj);
+            objects.fri = obj;
+            lv_obj_set_pos(obj, 316, 356);
+            lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+            lv_obj_set_style_text_font(obj, &ui_font_jersey_40, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_label_set_text(obj, "Fri");
+        }
+        {
+            // sat
+            lv_obj_t *obj = lv_label_create(parent_obj);
+            objects.sat = obj;
+            lv_obj_set_pos(obj, 383, 356);
+            lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+            lv_obj_set_style_text_font(obj, &ui_font_jersey_40, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_label_set_text(obj, "Sat");
+        }
+        {
+            // sun
+            lv_obj_t *obj = lv_label_create(parent_obj);
+            objects.sun = obj;
+            lv_obj_set_pos(obj, 454, 356);
+            lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+            lv_obj_set_style_text_font(obj, &ui_font_jersey_40, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_label_set_text(obj, "Sun");
+        }
+        {
+            // mon_date
+            lv_obj_t *obj = lv_label_create(parent_obj);
+            objects.mon_date = obj;
+            lv_obj_set_pos(obj, 21, 333);
+            lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+            lv_obj_set_style_text_font(obj, &ui_font_jersey_30, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_label_set_text(obj, "22");
+        }
+        {
+            // tue_date
+            lv_obj_t *obj = lv_label_create(parent_obj);
+            objects.tue_date = obj;
+            lv_obj_set_pos(obj, 109, 334);
+            lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+            lv_obj_set_style_text_font(obj, &ui_font_jersey_30, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_label_set_text(obj, "22");
+        }
+        {
+            // wed_date
+            lv_obj_t *obj = lv_label_create(parent_obj);
+            objects.wed_date = obj;
+            lv_obj_set_pos(obj, 184, 334);
+            lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+            lv_obj_set_style_text_font(obj, &ui_font_jersey_30, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_label_set_text(obj, "22");
+        }
+        {
+            // thu_date
+            lv_obj_t *obj = lv_label_create(parent_obj);
+            objects.thu_date = obj;
+            lv_obj_set_pos(obj, 257, 333);
+            lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+            lv_obj_set_style_text_font(obj, &ui_font_jersey_30, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_label_set_text(obj, "22");
+        }
+        {
+            // fri_date
+            lv_obj_t *obj = lv_label_create(parent_obj);
+            objects.fri_date = obj;
+            lv_obj_set_pos(obj, 317, 334);
+            lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+            lv_obj_set_style_text_font(obj, &ui_font_jersey_30, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_label_set_text(obj, "22");
+        }
+        {
+            // sat_date
+            lv_obj_t *obj = lv_label_create(parent_obj);
+            objects.sat_date = obj;
+            lv_obj_set_pos(obj, 395, 335);
+            lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+            lv_obj_set_style_text_font(obj, &ui_font_jersey_30, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_label_set_text(obj, "22");
+        }
+        {
+            // sun_date
+            lv_obj_t *obj = lv_label_create(parent_obj);
+            objects.sun_date = obj;
+            lv_obj_set_pos(obj, 468, 334);
+            lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+            lv_obj_set_style_text_font(obj, &ui_font_jersey_30, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_label_set_text(obj, "22");
         }
     }
     
@@ -48,6 +174,20 @@ void delete_screen_main() {
     objects.main = 0;
     objects.date = 0;
     objects.weather = 0;
+    objects.mon = 0;
+    objects.tue = 0;
+    objects.wed = 0;
+    objects.thu = 0;
+    objects.fri = 0;
+    objects.sat = 0;
+    objects.sun = 0;
+    objects.mon_date = 0;
+    objects.tue_date = 0;
+    objects.wed_date = 0;
+    objects.thu_date = 0;
+    objects.fri_date = 0;
+    objects.sat_date = 0;
+    objects.sun_date = 0;
 }
 
 void tick_screen_main() {

@@ -30,38 +30,38 @@ unsigned long fetchUnixTime() {
   String payload = http.getString();
   http.end();
   
-  // JSON manuell parsen: {"time": 1766526829}
+  // Parse JSON manually: {"time": 1766526829}
   int startPos = payload.indexOf(":") + 1;
   int endPos = payload.indexOf("}");
   String timeStr = payload.substring(startPos, endPos);
   timeStr.trim();
-  
-  return timeStr.toInt() + 3600; // UTC+1 Korrektur
+
+  return timeStr.toInt() + 3600; // UTC+1 correction
 }
 
 String formatUnixTime(unsigned long unixTime) {
   if (unixTime == 0) {
-    return "Ungültige Zeit";
+    return "Invalid Time";
   }
-  
-  // Unix timestamp in Datum/Zeit umwandeln
+
+  // Convert Unix timestamp to date/time
   time_t rawTime = (time_t)unixTime;
   struct tm* timeInfo = gmtime(&rawTime);
-  
-  // Wochentage auf Deutsch
-  const char* wochentage[] = {"So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"};
-  
-  // Format: Mo 12.03.2025 12:23:45
+
+  // Weekdays in English
+  const char* weekdays[] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
+
+  // Format: Mon 12.03.2025 12:23:45
   char buffer[30];
   snprintf(buffer, sizeof(buffer), "%s %02d.%02d.%04d %02d:%02d:%02d",
-           wochentage[timeInfo->tm_wday],
+           weekdays[timeInfo->tm_wday],
            timeInfo->tm_mday,
            timeInfo->tm_mon + 1,
            timeInfo->tm_year + 1900,
            timeInfo->tm_hour,
            timeInfo->tm_min,
            timeInfo->tm_sec);
-  
+
   return String(buffer);
 }
 
