@@ -22,13 +22,13 @@ void create_screen_main() {
     {
         lv_obj_t *parent_obj = obj;
         {
-            // Header
+            // date
             lv_obj_t *obj = lv_label_create(parent_obj);
-            objects.header = obj;
-            lv_obj_set_pos(obj, 10, 10);
+            objects.date = obj;
+            lv_obj_set_pos(obj, 567, 11);
             lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
-            lv_obj_set_style_text_font(obj, &lv_font_montserrat_30, LV_PART_MAIN | LV_STATE_DEFAULT);
-            lv_label_set_text(obj, "Planner");
+            lv_obj_set_style_text_font(obj, &ui_font_jersey_40, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_label_set_text(obj, "Date");
         }
     }
     
@@ -38,7 +38,7 @@ void create_screen_main() {
 void delete_screen_main() {
     lv_obj_del(objects.main);
     objects.main = 0;
-    objects.header = 0;
+    objects.date = 0;
 }
 
 void tick_screen_main() {
