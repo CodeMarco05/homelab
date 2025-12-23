@@ -42,7 +42,7 @@ void create_screen_main() {
             // mon
             lv_obj_t *obj = lv_label_create(parent_obj);
             objects.mon = obj;
-            lv_obj_set_pos(obj, 14, 356);
+            lv_obj_set_pos(obj, 32, 381);
             lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
             lv_obj_set_style_text_font(obj, &ui_font_jersey_40, LV_PART_MAIN | LV_STATE_DEFAULT);
             lv_label_set_text(obj, "Mon");
@@ -51,7 +51,7 @@ void create_screen_main() {
             // tue
             lv_obj_t *obj = lv_label_create(parent_obj);
             objects.tue = obj;
-            lv_obj_set_pos(obj, 96, 356);
+            lv_obj_set_pos(obj, 148, 381);
             lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
             lv_obj_set_style_text_font(obj, &ui_font_jersey_40, LV_PART_MAIN | LV_STATE_DEFAULT);
             lv_label_set_text(obj, "Tue");
@@ -60,7 +60,7 @@ void create_screen_main() {
             // wed
             lv_obj_t *obj = lv_label_create(parent_obj);
             objects.wed = obj;
-            lv_obj_set_pos(obj, 167, 356);
+            lv_obj_set_pos(obj, 257, 381);
             lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
             lv_obj_set_style_text_font(obj, &ui_font_jersey_40, LV_PART_MAIN | LV_STATE_DEFAULT);
             lv_label_set_text(obj, "Wed");
@@ -69,7 +69,7 @@ void create_screen_main() {
             // thu
             lv_obj_t *obj = lv_label_create(parent_obj);
             objects.thu = obj;
-            lv_obj_set_pos(obj, 245, 356);
+            lv_obj_set_pos(obj, 376, 381);
             lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
             lv_obj_set_style_text_font(obj, &ui_font_jersey_40, LV_PART_MAIN | LV_STATE_DEFAULT);
             lv_label_set_text(obj, "Thu");
@@ -78,7 +78,7 @@ void create_screen_main() {
             // fri
             lv_obj_t *obj = lv_label_create(parent_obj);
             objects.fri = obj;
-            lv_obj_set_pos(obj, 316, 356);
+            lv_obj_set_pos(obj, 495, 381);
             lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
             lv_obj_set_style_text_font(obj, &ui_font_jersey_40, LV_PART_MAIN | LV_STATE_DEFAULT);
             lv_label_set_text(obj, "Fri");
@@ -87,7 +87,7 @@ void create_screen_main() {
             // sat
             lv_obj_t *obj = lv_label_create(parent_obj);
             objects.sat = obj;
-            lv_obj_set_pos(obj, 383, 356);
+            lv_obj_set_pos(obj, 600, 381);
             lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
             lv_obj_set_style_text_font(obj, &ui_font_jersey_40, LV_PART_MAIN | LV_STATE_DEFAULT);
             lv_label_set_text(obj, "Sat");
@@ -96,7 +96,7 @@ void create_screen_main() {
             // sun
             lv_obj_t *obj = lv_label_create(parent_obj);
             objects.sun = obj;
-            lv_obj_set_pos(obj, 454, 356);
+            lv_obj_set_pos(obj, 710, 381);
             lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
             lv_obj_set_style_text_font(obj, &ui_font_jersey_40, LV_PART_MAIN | LV_STATE_DEFAULT);
             lv_label_set_text(obj, "Sun");
@@ -105,7 +105,7 @@ void create_screen_main() {
             // mon_date
             lv_obj_t *obj = lv_label_create(parent_obj);
             objects.mon_date = obj;
-            lv_obj_set_pos(obj, 21, 333);
+            lv_obj_set_pos(obj, 39, 358);
             lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
             lv_obj_set_style_text_font(obj, &ui_font_jersey_30, LV_PART_MAIN | LV_STATE_DEFAULT);
             lv_label_set_text(obj, "22");
@@ -114,7 +114,7 @@ void create_screen_main() {
             // tue_date
             lv_obj_t *obj = lv_label_create(parent_obj);
             objects.tue_date = obj;
-            lv_obj_set_pos(obj, 109, 334);
+            lv_obj_set_pos(obj, 161, 359);
             lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
             lv_obj_set_style_text_font(obj, &ui_font_jersey_30, LV_PART_MAIN | LV_STATE_DEFAULT);
             lv_label_set_text(obj, "22");
@@ -123,7 +123,7 @@ void create_screen_main() {
             // wed_date
             lv_obj_t *obj = lv_label_create(parent_obj);
             objects.wed_date = obj;
-            lv_obj_set_pos(obj, 184, 334);
+            lv_obj_set_pos(obj, 274, 359);
             lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
             lv_obj_set_style_text_font(obj, &ui_font_jersey_30, LV_PART_MAIN | LV_STATE_DEFAULT);
             lv_label_set_text(obj, "22");
@@ -132,7 +132,7 @@ void create_screen_main() {
             // thu_date
             lv_obj_t *obj = lv_label_create(parent_obj);
             objects.thu_date = obj;
-            lv_obj_set_pos(obj, 257, 333);
+            lv_obj_set_pos(obj, 388, 358);
             lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
             lv_obj_set_style_text_font(obj, &ui_font_jersey_30, LV_PART_MAIN | LV_STATE_DEFAULT);
             lv_label_set_text(obj, "22");
@@ -141,7 +141,7 @@ void create_screen_main() {
             // fri_date
             lv_obj_t *obj = lv_label_create(parent_obj);
             objects.fri_date = obj;
-            lv_obj_set_pos(obj, 317, 334);
+            lv_obj_set_pos(obj, 499, 359);
             lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
             lv_obj_set_style_text_font(obj, &ui_font_jersey_30, LV_PART_MAIN | LV_STATE_DEFAULT);
             lv_label_set_text(obj, "22");
@@ -150,7 +150,7 @@ void create_screen_main() {
             // sat_date
             lv_obj_t *obj = lv_label_create(parent_obj);
             objects.sat_date = obj;
-            lv_obj_set_pos(obj, 395, 335);
+            lv_obj_set_pos(obj, 610, 359);
             lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
             lv_obj_set_style_text_font(obj, &ui_font_jersey_30, LV_PART_MAIN | LV_STATE_DEFAULT);
             lv_label_set_text(obj, "22");
@@ -159,10 +159,73 @@ void create_screen_main() {
             // sun_date
             lv_obj_t *obj = lv_label_create(parent_obj);
             objects.sun_date = obj;
-            lv_obj_set_pos(obj, 468, 334);
+            lv_obj_set_pos(obj, 724, 359);
             lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
             lv_obj_set_style_text_font(obj, &ui_font_jersey_30, LV_PART_MAIN | LV_STATE_DEFAULT);
             lv_label_set_text(obj, "22");
+        }
+        {
+            // mon_degree
+            lv_obj_t *obj = lv_label_create(parent_obj);
+            objects.mon_degree = obj;
+            lv_obj_set_pos(obj, 14, 425);
+            lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+            lv_obj_set_style_text_font(obj, &ui_font_jersey_40, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_label_set_text(obj, "12 / 29");
+        }
+        {
+            // tue_degree
+            lv_obj_t *obj = lv_label_create(parent_obj);
+            objects.tue_degree = obj;
+            lv_obj_set_pos(obj, 127, 425);
+            lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+            lv_obj_set_style_text_font(obj, &ui_font_jersey_40, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_label_set_text(obj, "12 / 29");
+        }
+        {
+            // wed_degree
+            lv_obj_t *obj = lv_label_create(parent_obj);
+            objects.wed_degree = obj;
+            lv_obj_set_pos(obj, 240, 425);
+            lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+            lv_obj_set_style_text_font(obj, &ui_font_jersey_40, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_label_set_text(obj, "12 / 29");
+        }
+        {
+            // thu_degree
+            lv_obj_t *obj = lv_label_create(parent_obj);
+            objects.thu_degree = obj;
+            lv_obj_set_pos(obj, 357, 425);
+            lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+            lv_obj_set_style_text_font(obj, &ui_font_jersey_40, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_label_set_text(obj, "12 / 29");
+        }
+        {
+            // sat_degree
+            lv_obj_t *obj = lv_label_create(parent_obj);
+            objects.sat_degree = obj;
+            lv_obj_set_pos(obj, 578, 425);
+            lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+            lv_obj_set_style_text_font(obj, &ui_font_jersey_40, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_label_set_text(obj, "12 / 29");
+        }
+        {
+            // sun_degree
+            lv_obj_t *obj = lv_label_create(parent_obj);
+            objects.sun_degree = obj;
+            lv_obj_set_pos(obj, 690, 425);
+            lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+            lv_obj_set_style_text_font(obj, &ui_font_jersey_40, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_label_set_text(obj, "12 / 29");
+        }
+        {
+            // fri_degree
+            lv_obj_t *obj = lv_label_create(parent_obj);
+            objects.fri_degree = obj;
+            lv_obj_set_pos(obj, 470, 425);
+            lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+            lv_obj_set_style_text_font(obj, &ui_font_jersey_40, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_label_set_text(obj, "12 / 29");
         }
     }
     
@@ -188,6 +251,13 @@ void delete_screen_main() {
     objects.fri_date = 0;
     objects.sat_date = 0;
     objects.sun_date = 0;
+    objects.mon_degree = 0;
+    objects.tue_degree = 0;
+    objects.wed_degree = 0;
+    objects.thu_degree = 0;
+    objects.sat_degree = 0;
+    objects.sun_degree = 0;
+    objects.fri_degree = 0;
 }
 
 void tick_screen_main() {
