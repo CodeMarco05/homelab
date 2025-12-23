@@ -25,10 +25,11 @@ void create_screen_main() {
             // date
             lv_obj_t *obj = lv_label_create(parent_obj);
             objects.date = obj;
-            lv_obj_set_pos(obj, 567, 11);
+            lv_obj_set_pos(obj, 454, 9);
             lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
             lv_obj_set_style_text_font(obj, &ui_font_jersey_40, LV_PART_MAIN | LV_STATE_DEFAULT);
-            lv_label_set_text(obj, "Date");
+            lv_obj_set_style_text_align(obj, LV_TEXT_ALIGN_RIGHT, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_label_set_text(obj, "MON 22.22.2222 22:22:22");
         }
     }
     

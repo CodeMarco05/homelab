@@ -98,6 +98,13 @@ void connectWiFi() {
     lv_label_set_text(objects.header, buffer);
     lvgl_port_unlock();
   }*/
+  
+  // Fetch initial unix time
+  unixTime = getUnixTime();
+  if (unixTime > 0) {
+    Serial.print("Initial time: ");
+    Serial.println(formatUnixTime(unixTime));
+  }
 }
 
 
@@ -146,6 +153,7 @@ void loop()
 {
   static int counter = 1;
   static unsigned long lastUpdate = 0;
+  static unsigned long lastFetch = 0;
 
   
   // Update every 1000ms (1 second)
@@ -156,6 +164,29 @@ void loop()
     Serial.print("Hello World: ");
     Serial.println(counter);
 
+    // Increment unix time by 1 second
+    if (unixTime > 0) {
+      unixTime++;
+    }
+    
+    // Update date label every second
+    if (lvgl_port_lock(-1)) {
+      String formattedTime = formatUnixTime(unixTime);
+      lv_label_set_text(objects.date, formattedTime.c_str());
+      lvgl_port_unlock();
+    }
+
     counter++;
+  }
+  
+  // Fetch fresh unix time every 60 seconds
+  if (millis() - lastFetch >= 60000) {
+    lastFetch = millis();
+    
+    unsigned long newTime = getUnixTime();
+    if (newTime > 0) {
+      unixTime = newTime;
+      Serial.println("Time synchronized from server");
+    }
   }
 }
