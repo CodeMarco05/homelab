@@ -25,8 +25,8 @@ void create_screen_main() {
             // date
             lv_obj_t *obj = lv_label_create(parent_obj);
             objects.date = obj;
-            lv_obj_set_pos(obj, 454, 9);
-            lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+            lv_obj_set_pos(obj, 388, 9);
+            lv_obj_set_size(obj, 403, LV_SIZE_CONTENT);
             lv_obj_set_style_text_font(obj, &ui_font_jersey_40, LV_PART_MAIN | LV_STATE_DEFAULT);
             lv_obj_set_style_text_align(obj, LV_TEXT_ALIGN_RIGHT, LV_PART_MAIN | LV_STATE_DEFAULT);
             lv_label_set_text(obj, "MON 22.22.2222 22:22:22");
@@ -42,8 +42,8 @@ void create_screen_main() {
             // mon
             lv_obj_t *obj = lv_label_create(parent_obj);
             objects.mon = obj;
-            lv_obj_set_pos(obj, 32, 381);
-            lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+            lv_obj_set_pos(obj, 32, 382);
+            lv_obj_set_size(obj, 55, LV_SIZE_CONTENT);
             lv_obj_set_style_text_font(obj, &ui_font_jersey_40, LV_PART_MAIN | LV_STATE_DEFAULT);
             lv_label_set_text(obj, "Mon");
         }
@@ -51,7 +51,7 @@ void create_screen_main() {
             // tue
             lv_obj_t *obj = lv_label_create(parent_obj);
             objects.tue = obj;
-            lv_obj_set_pos(obj, 148, 381);
+            lv_obj_set_pos(obj, 148, 382);
             lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
             lv_obj_set_style_text_font(obj, &ui_font_jersey_40, LV_PART_MAIN | LV_STATE_DEFAULT);
             lv_label_set_text(obj, "Tue");
@@ -105,7 +105,7 @@ void create_screen_main() {
             // mon_date
             lv_obj_t *obj = lv_label_create(parent_obj);
             objects.mon_date = obj;
-            lv_obj_set_pos(obj, 39, 358);
+            lv_obj_set_pos(obj, 44, 358);
             lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
             lv_obj_set_style_text_font(obj, &ui_font_jersey_30, LV_PART_MAIN | LV_STATE_DEFAULT);
             lv_label_set_text(obj, "22");
@@ -168,9 +168,10 @@ void create_screen_main() {
             // mon_degree
             lv_obj_t *obj = lv_label_create(parent_obj);
             objects.mon_degree = obj;
-            lv_obj_set_pos(obj, 14, 425);
-            lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+            lv_obj_set_pos(obj, 7, 425);
+            lv_obj_set_size(obj, 105, LV_SIZE_CONTENT);
             lv_obj_set_style_text_font(obj, &ui_font_jersey_40, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_text_align(obj, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
             lv_label_set_text(obj, "12 / 29");
         }
         {
@@ -178,8 +179,9 @@ void create_screen_main() {
             lv_obj_t *obj = lv_label_create(parent_obj);
             objects.tue_degree = obj;
             lv_obj_set_pos(obj, 127, 425);
-            lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+            lv_obj_set_size(obj, 100, LV_SIZE_CONTENT);
             lv_obj_set_style_text_font(obj, &ui_font_jersey_40, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_text_align(obj, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
             lv_label_set_text(obj, "12 / 29");
         }
         {
@@ -187,8 +189,9 @@ void create_screen_main() {
             lv_obj_t *obj = lv_label_create(parent_obj);
             objects.wed_degree = obj;
             lv_obj_set_pos(obj, 240, 425);
-            lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+            lv_obj_set_size(obj, 98, LV_SIZE_CONTENT);
             lv_obj_set_style_text_font(obj, &ui_font_jersey_40, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_text_align(obj, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
             lv_label_set_text(obj, "12 / 29");
         }
         {
@@ -196,26 +199,29 @@ void create_screen_main() {
             lv_obj_t *obj = lv_label_create(parent_obj);
             objects.thu_degree = obj;
             lv_obj_set_pos(obj, 357, 425);
-            lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+            lv_obj_set_size(obj, 97, LV_SIZE_CONTENT);
             lv_obj_set_style_text_font(obj, &ui_font_jersey_40, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_text_align(obj, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
             lv_label_set_text(obj, "12 / 29");
         }
         {
             // sat_degree
             lv_obj_t *obj = lv_label_create(parent_obj);
             objects.sat_degree = obj;
-            lv_obj_set_pos(obj, 578, 425);
-            lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+            lv_obj_set_pos(obj, 575, 425);
+            lv_obj_set_size(obj, 102, LV_SIZE_CONTENT);
             lv_obj_set_style_text_font(obj, &ui_font_jersey_40, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_text_align(obj, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
             lv_label_set_text(obj, "12 / 29");
         }
         {
             // sun_degree
             lv_obj_t *obj = lv_label_create(parent_obj);
             objects.sun_degree = obj;
-            lv_obj_set_pos(obj, 690, 425);
-            lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+            lv_obj_set_pos(obj, 689, 425);
+            lv_obj_set_size(obj, 102, LV_SIZE_CONTENT);
             lv_obj_set_style_text_font(obj, &ui_font_jersey_40, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_text_align(obj, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
             lv_label_set_text(obj, "12 / 29");
         }
         {
@@ -223,8 +229,9 @@ void create_screen_main() {
             lv_obj_t *obj = lv_label_create(parent_obj);
             objects.fri_degree = obj;
             lv_obj_set_pos(obj, 470, 425);
-            lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+            lv_obj_set_size(obj, 93, LV_SIZE_CONTENT);
             lv_obj_set_style_text_font(obj, &ui_font_jersey_40, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_text_align(obj, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
             lv_label_set_text(obj, "12 / 29");
         }
     }
