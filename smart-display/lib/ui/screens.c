@@ -31,6 +31,13 @@ void create_screen_main() {
             lv_obj_set_style_text_align(obj, LV_TEXT_ALIGN_RIGHT, LV_PART_MAIN | LV_STATE_DEFAULT);
             lv_label_set_text(obj, "MON 22.22.2222 22:22:22");
         }
+        {
+            // weather
+            lv_obj_t *obj = lv_chart_create(parent_obj);
+            objects.weather = obj;
+            lv_obj_set_pos(obj, 14, 176);
+            lv_obj_set_size(obj, 426, 288);
+        }
     }
     
     tick_screen_main();
@@ -40,6 +47,7 @@ void delete_screen_main() {
     lv_obj_del(objects.main);
     objects.main = 0;
     objects.date = 0;
+    objects.weather = 0;
 }
 
 void tick_screen_main() {
