@@ -14,9 +14,9 @@ objects_t objects;
 lv_obj_t *tick_value_change_obj;
 uint32_t active_theme_index = 0;
 
-void create_screen_main() {
+void create_screen_weather_screen() {
     lv_obj_t *obj = lv_obj_create(0);
-    objects.main = obj;
+    objects.weather_screen = obj;
     lv_obj_set_pos(obj, 0, 0);
     lv_obj_set_size(obj, 800, 480);
     {
@@ -30,13 +30,6 @@ void create_screen_main() {
             lv_obj_set_style_text_font(obj, &ui_font_jersey_40, LV_PART_MAIN | LV_STATE_DEFAULT);
             lv_obj_set_style_text_align(obj, LV_TEXT_ALIGN_RIGHT, LV_PART_MAIN | LV_STATE_DEFAULT);
             lv_label_set_text(obj, "MON 22.22.2222 22:22:22");
-        }
-        {
-            // weather
-            lv_obj_t *obj = lv_chart_create(parent_obj);
-            objects.weather = obj;
-            lv_obj_set_pos(obj, 14, 9);
-            lv_obj_set_size(obj, 193, 139);
         }
         {
             // mon
@@ -236,14 +229,13 @@ void create_screen_main() {
         }
     }
     
-    tick_screen_main();
+    tick_screen_weather_screen();
 }
 
-void delete_screen_main() {
-    lv_obj_del(objects.main);
-    objects.main = 0;
+void delete_screen_weather_screen() {
+    lv_obj_del(objects.weather_screen);
+    objects.weather_screen = 0;
     objects.date = 0;
-    objects.weather = 0;
     objects.mon = 0;
     objects.tue = 0;
     objects.wed = 0;
@@ -267,14 +259,14 @@ void delete_screen_main() {
     objects.fri_degree = 0;
 }
 
-void tick_screen_main() {
+void tick_screen_weather_screen() {
 }
 
 
 
 typedef void (*create_screen_func_t)();
 create_screen_func_t create_screen_funcs[] = {
-    create_screen_main,
+    create_screen_weather_screen,
 };
 void create_screen(int screen_index) {
     create_screen_funcs[screen_index]();
@@ -285,7 +277,7 @@ void create_screen_by_id(enum ScreensEnum screenId) {
 
 typedef void (*delete_screen_func_t)();
 delete_screen_func_t delete_screen_funcs[] = {
-    delete_screen_main,
+    delete_screen_weather_screen,
 };
 void delete_screen(int screen_index) {
     delete_screen_funcs[screen_index]();
@@ -296,7 +288,7 @@ void delete_screen_by_id(enum ScreensEnum screenId) {
 
 typedef void (*tick_screen_func_t)();
 tick_screen_func_t tick_screen_funcs[] = {
-    tick_screen_main,
+    tick_screen_weather_screen,
 };
 void tick_screen(int screen_index) {
     tick_screen_funcs[screen_index]();
@@ -310,5 +302,5 @@ void create_screens() {
     lv_theme_t *theme = lv_theme_default_init(dispp, lv_palette_main(LV_PALETTE_BLUE), lv_palette_main(LV_PALETTE_RED), true, LV_FONT_DEFAULT);
     lv_disp_set_theme(dispp, theme);
     
-    create_screen_main();
+    create_screen_weather_screen();
 }

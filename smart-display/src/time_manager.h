@@ -2,23 +2,33 @@
 #define TIME_MANAGER_H
 
 #include <Arduino.h>
+#include <lvgl.h>
 
-// Initialize time manager and fetch initial unix time
-void initTimeManager();
+// Time update intervals
+#define TIME_DISPLAY_UPDATE_INTERVAL 1000  // Update display every 1 second
+#define TIME_SYNC_INTERVAL 60000           // Sync with server every 60 seconds
 
-// Fetch current unix time from API
-unsigned long fetchUnixTime();
+class TimeManager {
+ public:
+  // Initialize time manager and fetch initial unix time
+  void initTimeManager();
 
-// Format unix timestamp to date/time string
-String formatUnixTime(unsigned long unixTime);
+  // Get current unix time
+  unsigned long getCurrentUnixTime();
 
-// Get current unix time (call this every second)
-unsigned long getCurrentUnixTime();
+  // Process time updates (display and sync)
+  // Returns true if display was updated
+  bool processTimeUpdates();
 
-// Increment internal time by 1 second
-void incrementTime();
+ private:
+  // Fetch current unix time from API
+  unsigned long fetchUnixTime();
 
-// Update time from server (call periodically)
-void syncTimeFromServer();
+  // Format unix timestamp to date/time string
+  String formatUnixTime(unsigned long unixTime);
 
-#endif // TIME_MANAGER_H
+  // Update time from server
+  void syncTimeFromServer();
+};
+
+#endif  // TIME_MANAGER_H
