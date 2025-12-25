@@ -123,7 +123,7 @@ void loop() {
       case SCREEN_NONE: {
       } break;
       case SCREEN_WEATHER: {
-        timeManager.processTimeUpdates();
+        timeManager.updateTimeData();
         weatherManager.updateWeatherData();
       } break;
       default:

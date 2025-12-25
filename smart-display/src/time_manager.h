@@ -18,7 +18,7 @@ class TimeManager {
 
   // Process time updates (display and sync)
   // Returns true if display was updated
-  bool processTimeUpdates();
+  bool updateTimeData();
 
  private:
   // Fetch current unix time from API

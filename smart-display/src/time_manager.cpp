@@ -78,7 +78,7 @@ void TimeManager::syncTimeFromServer() {
   }
 }
 
-bool TimeManager::processTimeUpdates() {
+bool TimeManager::updateTimeData() {
   bool displayUpdated = false;
 
   // Update display every second
