@@ -1,6 +1,8 @@
 {
   "navigation": {
     "selectedUserPageObject": "[display.eez-project]:/userPages/0",
+    "selectedActionObject": "[display.eez-project]:/actions/-1",
+    "selectedFontObject": "[display.eez-project]:/fonts/1",
     "subnavigationSelectedItems": {}
   },
   "layoutModel": {
@@ -114,12 +116,12 @@
             {
               "type": "row",
               "id": "#813d6d2b-c297-4d6d-9465-c7e0eafc6954",
-              "weight": 15,
+              "weight": 24.100468290288813,
               "children": [
                 {
                   "type": "tabset",
                   "id": "#1df908d6-1747-41bb-aa7e-6525b0565b4a",
-                  "weight": 1,
+                  "weight": 0.7192019495752384,
                   "enableClose": false,
                   "children": [
                     {
@@ -151,7 +153,7 @@
                 {
                   "type": "tabset",
                   "id": "#10d44382-e7a9-48d5-8f55-2004da9ab556",
-                  "weight": 0.5708884688090737,
+                  "weight": 0.851686519233835,
                   "enableClose": false,
                   "children": [
                     {
@@ -194,7 +196,7 @@
             {
               "type": "tabset",
               "id": "EDITORS",
-              "weight": 52.751597444089455,
+              "weight": 48.47250951765098,
               "enableDeleteWhenEmpty": false,
               "enableClose": false,
               "children": [
@@ -215,7 +217,7 @@
             {
               "type": "tabset",
               "id": "#89fc932e-0737-4845-bde6-58bdfce406b1",
-              "weight": 32.248402555910545,
+              "weight": 27.427022192060218,
               "children": [
                 {
                   "type": "tab",
@@ -428,21 +430,10 @@
               "type": "tabset",
               "id": "RUNTIME-EDITORS",
               "weight": 1,
+              "selected": -1,
               "enableDeleteWhenEmpty": false,
               "enableClose": false,
-              "children": [
-                {
-                  "type": "tab",
-                  "id": "#aa62ac93-6928-4a59-9c2f-fce516c2bb26",
-                  "name": "Main",
-                  "component": "editor",
-                  "config": {
-                    "objectPath": "[test.eez-project]:/userPages/0",
-                    "permanent": false
-                  },
-                  "icon": "svg:page"
-                }
-              ],
+              "children": [],
               "active": true
             },
             {
@@ -1014,10 +1005,10 @@
       },
       "transform": {
         "translate": {
-          "x": -269.25,
-          "y": -194.41666666666663
+          "x": -253.71746017992382,
+          "y": -196.01076262626253
         },
-        "scale": 0.75
+        "scale": 0.67
       },
       "timeline": {
         "isEditorActive": false,
@@ -1046,6 +1037,6 @@
   ],
   "showInactiveFlowsInDebugger": true,
   "globalFlowZoom": true,
-  "flowZoom": 0.75,
+  "flowZoom": 0.67,
   "implementationLanguage": "C"
 }
