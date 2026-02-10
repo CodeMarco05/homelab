@@ -82,7 +82,7 @@ bool TimeManager::updateTimeData() {
   bool displayUpdated = false;
 
   // Update display every second
-  if (millis() - lastDisplayUpdate >= TIME_DISPLAY_UPDATE_INTERVAL) {
+  if (millis() - lastDisplayUpdate >= TIME_DISPLAY_UPDATE_INTERVAL || lastDisplayUpdate == 0) {
     // Increment time by passed milliseconds
     unixTime += (millis() - lastDisplayUpdate) / 1000;
 
