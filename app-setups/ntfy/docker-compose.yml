@@ -1,0 +1,18 @@
+services:
+  ntfy:
+    image: binwiederhier/ntfy:latest
+    container_name: ntfy
+    command: 
+      - serve
+      - --config=/etc/ntfy/server.yml
+    restart: always
+    networks:
+      - proxy
+    volumes:
+      - ./cache:/var/cache/ntfy
+      - ./server.yml:/etc/ntfy/server.yml
+
+networks:
+  proxy:
+    external: true
+    name: proxy-network

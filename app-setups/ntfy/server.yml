@@ -1,0 +1,21 @@
+# Basis-URL
+base-url: https://ntfy.marco-brandt.com
+
+# WICHTIG: Cache aktivieren
+cache-file: /var/cache/ntfy/cache.db
+cache-duration: 12h
+
+# Für iOS Push Notifications
+upstream-base-url: "https://ntfy.sh"
+
+# Attachments (optional)
+attachment-cache-dir: /var/cache/ntfy/attachments
+attachment-total-size-limit: 5G
+
+# AUTH - NIEMAND ohne Login!
+auth-file: /var/cache/ntfy/auth.db
+auth-default-access: deny-all
+
+# AUTH - WICHTIG: Diese Zeile muss da sein!
+auth-file: /var/cache/ntfy/auth.db
+auth-default-access: deny-all
