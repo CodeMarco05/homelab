@@ -1,0 +1,84 @@
+services:
+  postgresql:
+    image: docker.io/library/postgres:16-alpine
+    container_name: postgresql-authentic
+    env_file:
+    - .env
+    environment:
+      POSTGRES_DB: ${PG_DB:?PG_DB required}
+      POSTGRES_PASSWORD: ${PG_PASS:?database password required}
+      POSTGRES_USER: ${PG_USER:?PG_USER required}
+    healthcheck:
+      interval: 30s
+      retries: 5
+      start_period: 20s
+      test:
+      - CMD-SHELL
+      - pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}
+      timeout: 5s
+    restart: unless-stopped
+    volumes:
+    - database:/var/lib/postgresql/data
+    networks:
+      - watch-tower-backend
+
+  server:
+    image: ghcr.io/goauthentik/server:2025.12.3
+    container_name: authentic-server
+    command: server
+    depends_on:
+      postgresql:
+        condition: service_healthy
+    env_file:
+    - .env
+    environment:
+      AUTHENTIK_POSTGRESQL__HOST: postgresql
+      AUTHENTIK_POSTGRESQL__NAME: ${PG_DB:?PG_DB required}
+      AUTHENTIK_POSTGRESQL__PASSWORD: ${PG_PASS:?PG_PASS required}
+      AUTHENTIK_POSTGRESQL__USER: ${PG_USER:?PG_USER required}
+      AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY:?secret key required}
+    ports:
+    - ${COMPOSE_PORT_HTTP:?COMPOSE_PORT_HTTP required}:9000
+    - ${COMPOSE_PORT_HTTPS:?COMPOSE_PORT_HTTPS required}:9443
+    restart: unless-stopped
+    volumes:
+    - ./data:/data
+    - ./custom-templates:/templates
+    networks:
+      - watch-tower-backend
+      - watch-tower-frontend
+
+  worker:
+    image: ghcr.io/goauthentik/server:2025.12.3
+    container_name: authentic-worker
+    command: worker
+    depends_on:
+      postgresql:
+        condition: service_healthy
+    env_file:
+    - .env
+    environment:
+      AUTHENTIK_POSTGRESQL__HOST: postgresql
+      AUTHENTIK_POSTGRESQL__NAME: ${PG_DB:?PG_DB required}
+      AUTHENTIK_POSTGRESQL__PASSWORD: ${PG_PASS:?PG_PASS required}
+      AUTHENTIK_POSTGRESQL__USER: ${PG_USER:?PG_USER required}
+      AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY:?secret key required}
+    restart: unless-stopped
+    user: root
+    volumes:
+    - /var/run/docker.sock:/var/run/docker.sock
+    - ./data:/data
+    - ./certs:/certs
+    - ./custom-templates:/templates
+    networks:
+      - watch-tower-backend
+
+volumes:
+  database:
+    driver: local
+
+networks:
+  watch-tower-frontend:
+    external: true
+  watch-tower-backend:
+    external: true
