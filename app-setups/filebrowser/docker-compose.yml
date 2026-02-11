@@ -2,6 +2,7 @@ services:
   filebrowser:
     image: filebrowser/filebrowser:s6
     container_name: filebrowser
+    restart: unless-stopped
 #    ports:
 #      - "10400:10400"
     volumes:
@@ -11,7 +12,6 @@ services:
     environment:
       - PUID=1000
       - PGID=1000
-    restart: unless-stopped
     networks:
       - proxy
 
