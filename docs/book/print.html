@@ -37,10 +37,10 @@
             const path_to_root = "";
             const default_light_theme = "coal";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-86f4e80e.js";
+            window.path_to_searchindex_js = "searchindex-8cc65ac1.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-b7d800bd.js"></script>
+        <script src="toc-042c4819.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -178,7 +178,7 @@
                     <main>
                         <h1 id="my-lab-"><a class="header" href="#my-lab-">My Lab 🧪</a></h1>
 <p>This is the documentation of some of the main services I run in my home-lab.</p>
-<h2 id="the-pc-hardware"><a class="header" href="#the-pc-hardware">The pc hardware</a></h2>
+<h2 id="the-hardware"><a class="header" href="#the-hardware">The hardware</a></h2>
 <p>The hardware is build around hosting lots of applications at home. Components like uptime monitoring
 and customer applications are at Hetzner in a VPS.</p>
 <p>All my Networking is based on 2.5G and the OPNsense firewall management.</p>
@@ -202,88 +202,12 @@ proprietary services. For now this is the case :)</p>
 <p>Most of my application setups are in here first of all for my dementia and second to copy or adjust
 to ones needs.</p>
 <div style="break-before: page; page-break-before: always;"></div>
-<h1 id="docker-services"><a class="header" href="#docker-services">Docker Services</a></h1>
-<p>Most services run as Docker Compose stacks. Each stack lives in its own directory under <code>/opt/stacks/</code> on the host, with a consistent structure.</p>
-<h2 id="directory-layout"><a class="header" href="#directory-layout">Directory Layout</a></h2>
-<pre><code>/opt/stacks/
-├── traefik/
-│   ├── docker-compose.yml
-│   ├── traefik.yml
-│   └── dynamic/
-├── authentik/
-│   └── docker-compose.yml
-├── monitoring/
-│   └── docker-compose.yml
-└── ...
+<h1 id="networkign"><a class="header" href="#networkign">Networkign</a></h1>
+<p>My network is split into my remote services and the application I host at my home. All is connected
+via Tailscale. But i plan to switch Netbird.</p>
+<p>For some use cases it is really useful to use <em>Nginx Proxy Manager</em></p>
+<pre><code class="language-yml">
 </code></pre>
-<p>Every stack uses a shared external Docker network called <code>proxy</code> so Traefik can reach containers across stacks.</p>
-<h2 id="shared-network"><a class="header" href="#shared-network">Shared Network</a></h2>
-<p>Create it once on the host — all stacks reference it as external:</p>
-<pre><code class="language-bash">docker network create proxy
-</code></pre>
-<p>In each <code>docker-compose.yml</code>:</p>
-<pre><code class="language-yaml">networks:
-  proxy:
-    external: true
-</code></pre>
-<h2 id="traefik"><a class="header" href="#traefik">Traefik</a></h2>
-<p>Traefik handles all ingress. TLS certificates are issued automatically via Let’s Encrypt DNS challenge through Cloudflare.</p>
-<pre><code class="language-yaml">services:
-  traefik:
-    image: traefik:v3.1
-    restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./traefik.yml:/traefik.yml:ro
-      - ./dynamic:/dynamic:ro
-      - ./certs:/certs
-    networks:
-      - proxy
-</code></pre>
-<p>Expose a service by adding labels:</p>
-<pre><code class="language-yaml">labels:
-  - "traefik.enable=true"
-  - "traefik.http.routers.myapp.rule=Host(`myapp.home.lab`)"
-  - "traefik.http.routers.myapp.entrypoints=websecure"
-  - "traefik.http.routers.myapp.tls=true"
-</code></pre>
-<h2 id="authentik"><a class="header" href="#authentik">Authentik</a></h2>
-<p>Authentik provides SSO for all services that support OAuth2 or SAML. Services that don’t natively support it use Traefik’s <code>forwardAuth</code> middleware.</p>
-<h3 id="forward-auth-middleware"><a class="header" href="#forward-auth-middleware">Forward Auth Middleware</a></h3>
-<p>Define it once in a dynamic config file:</p>
-<pre><code class="language-yaml"># dynamic/authentik.yml
-http:
-  middlewares:
-    authentik:
-      forwardAuth:
-        address: "http://authentik-server:9000/outpost.goauthentik.io/auth/traefik"
-        trustForwardHeader: true
-        authResponseHeaders:
-          - X-authentik-username
-          - X-authentik-groups
-          - X-authentik-email
-</code></pre>
-<p>Then attach to any router with:</p>
-<pre><code class="language-yaml">- "traefik.http.routers.myapp.middlewares=authentik@file"
-</code></pre>
-<h2 id="watchtower"><a class="header" href="#watchtower">Watchtower</a></h2>
-<p>Watchtower keeps images up to date automatically. It runs on a schedule and sends a notification to ntfy when containers are updated.</p>
-<pre><code class="language-yaml">services:
-  watchtower:
-    image: containrrr/watchtower
-    restart: unless-stopped
-    environment:
-      - WATCHTOWER_SCHEDULE=0 0 4 * * *
-      - WATCHTOWER_CLEANUP=true
-      - WATCHTOWER_NOTIFICATION_URL=ntfy://ntfy.home.lab/watchtower
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-</code></pre>
-<hr>
-<p>See the <a href="#kubernetes">Kubernetes</a> page for workloads that run in k3s instead of plain Docker.</p>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="kubernetes"><a class="header" href="#kubernetes">Kubernetes</a></h1>
 <p>The cluster runs k3s — a lightweight Kubernetes distribution that works well on low-power hardware. Three nodes form the cluster: one control plane and two workers.</p>

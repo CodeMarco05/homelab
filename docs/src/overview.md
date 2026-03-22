@@ -2,7 +2,7 @@
 
 This is the documentation of some of the main services I run in my home-lab.
 
-## The pc hardware
+## The hardware
 
 The hardware is build around hosting lots of applications at home. Components like uptime monitoring
 and customer applications are at Hetzner in a VPS.

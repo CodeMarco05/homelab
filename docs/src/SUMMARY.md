@@ -1,5 +1,5 @@
 # Summary
 
 - [Overview](./overview.md)
-- [Docker Services](./docker.md)
+- [Networking](./networking.md)
 - [Kubernetes](./kubernetes.md)
