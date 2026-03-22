@@ -1,0 +1,8 @@
+[book]
+title = "home-lab"
+authors = ["Marco"]
+language = "en"
+
+[output.html]
+default-theme = "coal"
+additional-css = ["custom.css"]

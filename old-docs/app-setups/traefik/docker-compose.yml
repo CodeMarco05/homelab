@@ -1,0 +1,67 @@
+services:
+  traefik:
+    image: traefik:v3.6
+    container_name: traefik
+    restart: unless-stopped
+    command:
+      # API settings - secure the dashboard
+      - "--api.dashboard=true"
+      
+      # Logging
+      - "--log.level=INFO"  # INFO, DEBUG etc.
+      # - "--log.filepath=/logs/traefik.log"      
+      - "--log.format=json"
+      
+      # Access logs - keep these concise
+      - "--accesslog=true"
+      # - "--accesslog.filepath=/logs/access.log"
+      - "--accesslog.format=json"
+      - "--accesslog.bufferingsize=100"  # Buffer to reduce I/O
+
+      # Docker provider
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      
+      # Entrypoints
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--entrypoints.grpc.address=:4317"
+
+      # Global HTTP to HTTPS redirect
+      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+
+      # Let's Encrypt HTTP challenge (simpler for public IP)
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge=true"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
+      - "--certificatesresolvers.letsencrypt.acme.email=brandt.marco05@gmail.com"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+
+    ports:
+      - "80:80"
+      - "443:443"
+      - "4317:4317"
+
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./letsencrypt:/letsencrypt
+      - ./logs:/logs
+
+    labels:
+      # Secure the Traefik dashboard
+      - "traefik.enable=true"
+      - "traefik.http.routers.dashboard.rule=Host(`traefik.marco-brandt.com`)"
+      - "traefik.http.routers.dashboard.entrypoints=websecure"
+      - "traefik.http.routers.dashboard.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.dashboard.service=api@internal"
+      - "traefik.http.routers.dashboard.middlewares=auth"
+      # Generate password with: echo $(htpasswd -nb admin yourpassword) | sed -e s/\\$/\\$\\$/g
+      - "traefik.http.middlewares.auth.basicauth.users="
+
+    networks:
+      - traefik
+
+networks:
+  traefik:
+    name: traefik
+    driver: bridge
