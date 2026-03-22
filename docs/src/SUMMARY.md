@@ -1,5 +1,6 @@
 # Summary
 
 - [Overview](./overview.md)
-- [Networking](./networking.md)
+- [Networking](./networking/overview.md)
+  - [Traefik](./networking/traefik.md)
 - [Kubernetes](./kubernetes.md)

@@ -37,10 +37,10 @@
             const path_to_root = "";
             const default_light_theme = "coal";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-8cc65ac1.js";
+            window.path_to_searchindex_js = "searchindex-c1f87cd7.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-042c4819.js"></script>
+        <script src="toc-08485329.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -205,8 +205,209 @@ to ones needs.</p>
 <h1 id="networkign"><a class="header" href="#networkign">Networkign</a></h1>
 <p>My network is split into my remote services and the application I host at my home. All is connected
 via Tailscale. But i plan to switch Netbird.</p>
-<p>For some use cases it is really useful to use <em>Nginx Proxy Manager</em></p>
-<pre><code class="language-yml">
+<p>For some use cases it is really useful to use <em>Nginx Proxy Manager</em>. In the portmapping the
+<strong>127.0.0.1</strong> is that it only maps to the local interface. So from outside it is not forwoarded and
+takes no security issue. You can forwoard it via <code>ssh -L &lt;port&gt;:localhost:&lt;remote-port&gt; &lt;ssh-host&gt;</code></p>
+<pre><code class="language-yml">services:
+  nginx-proxy-manager:
+    image: "jc21/nginx-proxy-manager:latest"
+    restart: always
+    container_name: nginx-proxy-manager
+    ports:
+      - "127.0.0.1:80:80"
+      - "127.0.0.1:81:81"
+      - "127.0.0.1:443:443"
+    networks:
+      - proxy
+    volumes:
+      - ./data:/data
+      - ./letsencrypt:/etc/letsencrypt
+
+networks:
+  proxy:
+    name: proxy
+    driver: bridge
+</code></pre>
+<h2 id="traefik"><a class="header" href="#traefik">Traefik</a></h2>
+<p>For the rest i only use traefik. The setup is split into two sections</p>
+<p>For servers with a public IP adress you can use the certresolver via http and behind private
+networks etc. you can use an alternative resolver over a dns challenge.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="traefik-1"><a class="header" href="#traefik-1">Traefik</a></h1>
+<p>Here lies the config for traefik.</p>
+<h2 id="base-config-docker-compose-file"><a class="header" href="#base-config-docker-compose-file">Base config docker-compose file</a></h2>
+<p>Create a directory for the docker compose for traefik. For example <code>mkdir traefik</code>, then create the
+<code>docker-compose.yml</code> in there. The config files are also down below.</p>
+<pre><code class="language-yml"># docker-compose.yml
+services:
+  traefik:
+    image: traefik:v3.6 # !important update traefik
+    container_name: traefik
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "4317:4317" #grpc
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik.yml:/etc/traefik/traefik.yml:ro # config file for traefik -&gt; change if needed
+      - ./letsencrypt:/letsencrypt
+      - ./logs:/logs
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.dashboard.rule=Host(`&lt;domain-for-traefik-admin-dashboard&gt;`)"
+      - "traefik.http.routers.dashboard.entrypoints=websecure"
+      - "traefik.http.routers.dashboard.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.dashboard.service=api@internal"
+      - "traefik.http.routers.dashboard.middlewares=auth"
+      # this can be removed if the auth is not needed for the traefik dashboard
+      - "traefik.http.middlewares.auth.basicauth.users=admin:&lt;hash-for-basic-auth&gt;"
+    networks:
+      # the traefik network in which all docker containers
+      # need to be for the labels to be recognised
+      - traefik
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
+
+  # dashboard for traefik
+  goaccess:
+    image: xavierh/goaccess-for-nginxproxymanager:latest
+    container_name: goaccess
+    restart: unless-stopped
+    environment:
+      - TZ=Europe/Berlin
+      - LOG_TYPE=TRAEFIK
+      - SKIP_ARCHIVED_LOGS=False
+    volumes:
+      - ./logs:/opt/log:ro
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.goaccess.rule=Host(`&lt;domain-for-dashboard&gt;`)"
+      - "traefik.http.routers.goaccess.entrypoints=websecure"
+      - "traefik.http.routers.goaccess.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.goaccess.middlewares=auth"
+      - "traefik.http.services.goaccess.loadbalancer.server.port=7880"
+    networks:
+      - traefik
+
+networks:
+  traefik:
+    name: traefik
+    driver: bridge
+</code></pre>
+<h2 id="traefikyml-file"><a class="header" href="#traefikyml-file">traefik.yml file</a></h2>
+<p>Here lies the config for traefik. This can be also done via the start command in the docker run
+section but this is in my opinion more clear.</p>
+<pre><code class="language-yml">global:
+  checkNewVersion: false
+  # if you are nice you can turn this on
+  sendAnonymousUsage: false
+
+api:
+  dashboard: true
+
+log:
+  level: INFO
+  format: json
+  filePath: /logs/traefik.log
+  maxSize: 100
+  maxAge: 7
+  maxBackups: 3
+  compress: true
+
+accessLog:
+  filePath: /logs/access.log
+  # can be set to json but then the admin dashboard (goaccess) won't work
+  format: common
+  bufferingSize: 100
+
+entryPoints:
+  # the entry point for port 80
+  web:
+    address: ":80"
+    http:
+      # perma redirect to https
+      redirections:
+        entrypoint:
+          to: websecure
+          scheme: https
+    # needed to forward the headers for access to be able to view
+    # them if traffic is proxied through cloudflare
+    # check if the ips are still right
+    forwardedHeaders:
+      trustedIPs: &amp;cloudflare-ips
+        - "173.245.48.0/20"
+        - "103.21.244.0/22"
+        - "103.22.200.0/22"
+        - "103.31.4.0/22"
+        - "141.101.64.0/18"
+        - "108.162.192.0/18"
+        - "190.93.240.0/20"
+        - "188.114.96.0/20"
+        - "197.234.240.0/22"
+        - "198.41.128.0/17"
+        - "162.158.0.0/15"
+        - "104.16.0.0/13"
+        - "104.24.0.0/14"
+        - "172.64.0.0/13"
+        - "131.0.72.0/22"
+        - "2400:cb00::/32"
+        - "2606:4700::/32"
+        - "2803:f800::/32"
+        - "2405:b500::/32"
+        - "2405:8100::/32"
+        - "2a06:98c0::/29"
+        - "2c0f:f248::/32"
+
+  # websecure https entrypoint
+  websecure:
+    address: ":443"
+    forwardedHeaders:
+      trustedIPs: *cloudflare-ips
+
+  # if you need a grpc entry point for metrics, logs etc.
+  grpc:
+    address: ":4317"
+
+# certificate resolver over http only works when a public IP is available
+certificatesResolvers:
+  letsencrypt:
+    acme:
+      email: &lt;your-mail&gt;
+      storage: /letsencrypt/acme.json
+      httpChallenge:
+        entryPoint: web
+
+# here can also be added more providers
+providers:
+  docker:
+    exposedByDefault: false
+</code></pre>
+<h2 id="the-setup-for-servers-without-a-public-ip"><a class="header" href="#the-setup-for-servers-without-a-public-ip">The setup for servers without a public IP</a></h2>
+<p>Here not a lot of adjustment is needed. In the <code>docker-compose.yml</code> add this as an environment</p>
+<pre><code class="language-yml"># docker-compose.yml
+environment:
+  - CF_DNS_API_TOKEN=${CF_DNS_API_TOKEN}
+</code></pre>
+<p>Then create a <code>.env</code> file where we can save the API token from cloudflare. It is important that the
+token has access to DNS where edit and read is allowed.</p>
+<pre><code class="language-env"># .env
+CF_DNS_API_TOKEN=&lt;your-token&gt;
+</code></pre>
+<p>Now also change the certresolver</p>
+<pre><code class="language-yml">certificatesResolvers:
+  letsencrypt:
+    acme:
+      email: &lt;your-mail&gt; 
+      storage: /letsencrypt/acme.json
+      dnsChallenge:
+        provider: cloudflare # this is important
+        resolvers:
+          - "1.1.1.1:53"
+          - "8.8.8.8:53"
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="kubernetes"><a class="header" href="#kubernetes">Kubernetes</a></h1>
