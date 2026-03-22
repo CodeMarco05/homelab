@@ -14,9 +14,9 @@ services:
     restart: always
     container_name: nginx-proxy-manager
     ports:
-      - "127.0.0.1:80:80"
+      - "80:80"
       - "127.0.0.1:81:81"
-      - "127.0.0.1:443:443"
+      - "443:443"
     networks:
       - proxy
     volumes:
