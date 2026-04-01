@@ -1,0 +1,19 @@
+# docker-compose.yml
+services:
+  ntfy:
+    image: binwiederhier/ntfy:latest
+    container_name: ntfy
+    command:
+      - serve
+      - --config=/etc/ntfy/server.yml
+    restart: unless-stopped
+    networks:
+      - proxy
+    volumes:
+      - ./cache:/var/cache/ntfy
+      - ./server.yml:/etc/ntfy/server.yml
+
+networks:
+  traefik:
+    external: true
+    name: traefik

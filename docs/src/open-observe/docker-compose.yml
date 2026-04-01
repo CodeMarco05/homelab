@@ -1,0 +1,47 @@
+services:
+  openobserve:
+    image: o2cr.ai/openobserve/openobserve-enterprise:latest
+    container_name: openobserve
+    restart: unless-stopped
+    ports:
+      - "5080:5080"
+    volumes:
+      - ./data:/data
+    environment:
+      - ZO_DATA_DIR=/data
+      - ZO_ROOT_USER_EMAIL=<initial-root-mail>
+      - ZO_ROOT_USER_PASSWORD=<initial-root-password>
+      - ZO_GRPC_PORT=5081
+    labels:
+      # -------- UI ---------
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik"
+      - "traefik.http.routers.openobserve.rule=Host(`opensearch.marco-brandt.com`)" # sample setup for my domain
+      - "traefik.http.routers.openobserve.entrypoints=websecure"
+      - "traefik.http.routers.openobserve.tls=true"
+      - "traefik.http.routers.openobserve.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.openobserve.service=openobserve"
+      - "traefik.http.services.openobserve.loadbalancer.server.port=5080"
+      # -------- gPRC --------
+      - "traefik.http.routers.openobserve-grpc.rule=Host(`grpc-openobserve.marco-brandt.com`)" # sample setup for my domain
+      - "traefik.http.routers.openobserve-grpc.entrypoints=grpc"
+      - "traefik.http.routers.openobserve-grpc.tls=true"
+      - "traefik.http.routers.openobserve-grpc.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.openobserve-grpc.service=openobserve-grpc"
+      - "traefik.http.services.openobserve-grpc.loadbalancer.server.port=5081"
+      - "traefik.http.services.openobserve-grpc.loadbalancer.server.scheme=h2c"
+
+    networks:
+      - traefik
+      - monitoring
+      - internal
+
+networks:
+  # traefik network
+  traefik:
+    external: true
+  # monitoring network internal for me. adjust as needed
+  monitoring:
+    external: true
+  internal:
+    driver: bridge

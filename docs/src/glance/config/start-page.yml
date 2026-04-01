@@ -1,0 +1,126 @@
+# config/start-page.yml
+- name: Startpage
+  width: wide
+  hide-desktop-navigation: true
+  center-vertically: true
+  columns:
+    - size: small
+      widgets:
+        - $include: stocks-widget.yml
+        - $include: github-repos-widget.yml
+        - type: weather
+          location: Hamburg, Germany
+          units: metric # alternatively "imperial"
+          hour-format: 24h # alternatively "24h"
+          # Optionally hide the location from being displayed in the widget
+          # hide-location: true
+
+    - size: full
+      widgets:
+        - type: search
+          autofocus: true
+          search-engine: google
+        - type: monitor
+          cache: 1m
+          title: Services
+          sites:
+            - title: Proxmox
+              url: https://proxmox.marco-brandt.com
+              icon: si:proxmox
+              headers:
+                # used to get through cloudflare access with a service token
+                CF-Access-Client-Id: ${CF_ID}
+                CF-Access-Client-Secret: ${CF_SECRET} 
+            - title: Traefik
+              url: https://traefik.marco-brandt.com
+              icon: si:traefikproxy
+              status-codes-indicating-success:
+                - 200
+                - 401
+            - title: Dozzle
+              url: https://log.marco-brandt.com
+              icon: si:bookmeter
+              headers:
+                CF-Access-Client-Id: ${CF_ID}
+                CF-Access-Client-Secret: ${CF_SECRET}
+            - title: n8n
+              url: https://n8n.marco-brandt.com
+              icon: si:n8n
+            - title: Filebrowser
+              url: https://filebrowser.marco-brandt.com
+              icon: si:onlyoffice
+              headers:
+                CF-Access-Client-Id: ${CF_ID}
+                CF-Access-Client-Secret: ${CF_SECRET}
+            - title: Traefik Log
+              url: https://goaccess.marco-brandt.com
+              icon: si:openaccess
+              headers:
+                CF-Access-Client-Id: ${CF_ID}
+                CF-Access-Client-Secret: ${CF_SECRET}
+
+        - type: monitor
+          cache: 1m
+          title: Services Business
+          sites:
+            - title: Nginx Proxy Silikonfugen
+              url: https://nginx.silikonfugen-brandt.com
+              icon: si:nginxproxymanager
+            - title: Silikonfugen Brandt
+              url: https://silikonfugen-brandt.com
+              icon: si:googlechrome
+
+        - type: bookmarks
+          groups:
+            - title: General
+              links:
+                - title: Gmail
+                  url: https://mail.google.com/mail/u/0/
+                  icon: si:gmail
+                - title: Amazon
+                  url: https://www.amazon.com/
+                  icon: si:shopee
+                - title: YouTube
+                  url: https://www.youtube.com/
+                  icon: si:youtube
+                - title: Prime Video
+                  url: https://www.primevideo.com/
+                  icon: si:airplayvideo
+                - title: Hostinger Mail Acc
+                  url: https://mail.hostinger.com/v2/auth/login
+                  icon: si:hostinger
+            - title: Programming
+              links:
+                - title: Github
+                  url: https://github.com/
+                  icon: si:github
+                - title: CloudFlare
+                  url: https://dash.cloudflare.com/
+                  icon: si:cloudflare
+                - title: Tailscale
+                  url: https://login.tailscale.com/admin/machines
+                  icon: si:tailscale
+                - title: Docker Hub
+                  url: https://hub.docker.com/repositories/marco1205
+                  icon: si:docker
+
+        - type: docker-containers
+          hide-by-default: false
+
+        - type: extension
+          url: http://glance-github-graph:8080/graph/CodeMarco05
+          allow-potentially-dangerous-html: true
+          parameters:
+            background-color: "#1d2025"
+            primary-color: "#39d353"
+            svg-height: 150
+            show-months: true
+            show-weekdays: true
+            font-size: 9
+            transition-hue: false
+
+    - size: small
+      widgets:
+        - type: server-stats
+          cache: 1m
+        - $include: uptime-kuma.yml

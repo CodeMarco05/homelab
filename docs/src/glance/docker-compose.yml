@@ -1,0 +1,46 @@
+# docker-compose.yml
+services:
+  glance:
+    container_name: glance
+    image: glanceapp/glance:latest
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - ./config:/app/config
+      - ./assets:/app/assets
+      - /etc/localtime:/etc/localtime:ro
+
+        # docker socket for container monitoring
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /proc:/proc:ro
+#    ports:
+#     - 8080:8080
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.glance.rule=Host(`<glance-url>`)"
+      - "traefik.http.routers.glance.entrypoints=websecure"
+      - "traefik.http.routers.glance.tls.certresolver=letsencrypt"
+      - "traefik.http.services.glance.loadbalancer.server.port=8080"
+      - "traefik.docker.network=traefik"
+    networks:
+      - glance-network
+      - traefik
+
+  glance-github-graph:
+    image: haumea/glance-github-graph:latest
+    restart: unless-stopped
+#   ports:
+#     - 8095:8080
+    environment:
+      - CACHE_ENABLED=true
+      - CACHE_TYPE=memory
+      - CACHE_DURATION_SECS=3600
+    networks:
+      - glance-network
+
+networks:
+  glance-network:
+    driver: bridge
+  traefik:
+    external: true
+    name: traefik

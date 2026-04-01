@@ -1,0 +1,51 @@
+# docker-compose.yml
+services:
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: n8n
+    restart: unless-stopped
+    environment:
+      # General settings
+      - N8N_HOST=${N8N_HOST} # e.g. n8n.marco-brandt.com
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=https
+
+      # Webhook URL (update this to your domain) e.g. https://n8n.marco-brandt.com/
+      - WEBHOOK_URL=https://${N8N_HOST}/
+
+      # Database (SQLite - stored in volume)
+      - DB_TYPE=sqlite
+
+      # Execution settings
+      - EXECUTIONS_MODE=regular
+
+      # Timezone
+      - GENERIC_TIMEZONE=${TIMEZONE:-Europe/Berlin}
+      - TZ=${TIMEZONE:-Europe/Berlin}
+
+      # Security
+      - N8N_BASIC_AUTH_ACTIVE=false
+
+      # Editor URL e.g. https://n8n.marco-brandt.com
+      - N8N_EDITOR_BASE_URL=https://${N8N_HOST}
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ./local-files:/files
+    networks:
+      - traefik
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.n8n.rule=Host(`<n8n-url>`)"
+      - "traefik.http.routers.n8n.entrypoints=websecure"
+      - "traefik.http.routers.n8n.tls=true"
+      - "traefik.http.routers.n8n.tls.certresolver=letsencrypt"
+      - "traefik.http.services.n8n.loadbalancer.server.port=5678"
+
+volumes:
+  n8n_data:
+    driver: local
+
+networks:
+  traefik:
+    external: true
+    name: traefik
