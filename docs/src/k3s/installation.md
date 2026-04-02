@@ -24,3 +24,10 @@ curl -sfL https://get.k3s.io | sh -s - agent \
 ```
 
 To uninstall files are in `/usr/local/bin/`
+
+The config is under `sudo nano /etc/rancher/k3s/config.yaml`. There also should be 
+
+```yml
+tls-san:
+  - <tailscale-ip>
+```
