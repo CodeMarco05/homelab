@@ -11,3 +11,5 @@
 - [n8n](./n8n/overview.md)
 - [ntfy](./ntfy/overview.md)
 - [OpenObserve](./open-observe/overview.md)
+- [k3s](./k3s/overview.md)
+  - [installation](./k3s/installation.md)
