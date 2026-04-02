@@ -1,0 +1,20 @@
+# kustomization.yaml
+namespace: glance
+
+configMapGenerator:
+- name: glance-config
+  options:
+    disableNameSuffixHash: true
+  files:
+  - config/glance.yml
+  - config/start-page.yml
+  - config/stocks-widget.yml
+  - config/github-repos-widget.yml
+  - config/uptime-kuma.yml
+
+secretGenerator:
+- name: glance-secrets
+  options:
+    disableNameSuffixHash: true
+  envs:
+  - secret.env

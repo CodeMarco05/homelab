@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: glance-github-graph
+  namespace: glance
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: glance-github-graph
+  template:
+    metadata:
+      labels:
+        app: glance-github-graph
+    spec:
+      containers:
+        - name: glance-github-graph
+          image: haumea/glance-github-graph:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: CACHE_ENABLED
+              value: "true"
+            - name: CACHE_TYPE
+              value: memory
+            - name: CACHE_DURATION_SECS
+              value: "3600"
